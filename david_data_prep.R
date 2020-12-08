@@ -1,12 +1,14 @@
 # STAT 8330 project #3
 # David Reynolds
-# Data exploration
+# Data prep
 
 # Read in the data (just games, players, and plays for now)
 setwd("~/Downloads/Documents/GitHub/Data-III-Project-3/Data")
 games <- read.csv("games.csv")
 players <- read.csv("players.csv")
 plays <- read.csv("plays.csv")
+
+### Data cleaning
 
 # Check for NAs
 apply(games, 2, function(x) any(is.na(x)))
@@ -27,12 +29,37 @@ plays$defendersInTheBox[is.na(plays$defendersInTheBox)] <- 6
 mean(plays$numberOfPassRushers, na.rm = TRUE)
 plays$numberOfPassRushers[is.na(plays$numberOfPassRushers)] <- 4
 
-# Replace NAs for preSnapVisitorScore
-
-# Replace NAS for preSnapHomeScore
-
 # Replace NAs for absoluteYardlineNumber
 plays_yardline <- plays %>% 
   select(yardlineSide, yardlineNumber, absoluteYardlineNumber)
 
-plays_na$absoluteYardlineNumber <- ifelse(is.na(plays_na$absoluteYardlineNumber) == TRUE, ifelse(plays_na$yardlineSide == plays_na$possessionTeam, 60 + (50 - plays_na$yardlineNumber), plays_na$yardlineNumber + 10), plays_na$absoluteYardlineNumber)
+plays$absoluteYardlineNumber <- ifelse(is.na(plays$absoluteYardlineNumber) == TRUE, ifelse(plays$yardlineSide == plays$possessionTeam, 60 + (50 - plays$yardlineNumber), plays$yardlineNumber + 10), plays$absoluteYardlineNumber)
+
+## Address remaining NAs (STILL NEED TO FIX)
+apply(plays, 2, function(x) any(is.na(x)))
+
+# Calculate pct of plays with NAs in which a DPI occurred
+dpi <- plays %>% 
+  filter(isDefensivePI == "TRUE")
+
+dpi_na <- dpi %>% 
+  filter(is.na(preSnapVisitorScore) & is.na(preSnapHomeScore) & gameClock == "")
+
+nrow(dpi_na)/nrow(dpi) # 92% of rows with NAs have isDefensivePI == TRUE
+
+# Create unique play ID and order plays by it
+plays$gameId <- as.character(plays$gameId)
+plays$playId <- as.character(plays$playId)
+plays$Id <- paste0(plays$gameId, plays$playId)
+plays$Id <- as.numeric(plays$Id)
+
+plays <- plays %>% 
+  arrange(Id)
+
+### Feature engineering
+
+# Side binary
+plays$side <- ifelse(plays$possessionTeam == plays$yardlineSide, "other", "own")
+plays$side <- as.factor(plays$side)
+
+# 
