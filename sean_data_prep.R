@@ -97,7 +97,6 @@ View(time)
 hat<-str_sub(time, end =-4)
 
 res<-ms(hat)
-View(res)
 time_s<-seconds(res)
 time_s<-str_sub(time_s, end=-2)
 time_s<-as.data.frame(time_s)
@@ -114,9 +113,32 @@ plays_4qtr$differential<-plays_4qtr$preSnapHomeScore-plays_4qtr$preSnapVisitorSc
 #don't see anything here either
 plot(plays_4qtr$differential, plays_4qtr$epa)
 
-plays_4qtr$gtime<-(plays_4qtr$differential/plays_4qtr$time_seconds)
+plays_4qtr$gtime<-(abs(plays_4qtr$differential)/plays_4qtr$time_seconds)
+
 plot(plays_4qtr$gtime, plays_4qtr$epa)
+#remove inf values
+plays_4qtr<-plays_4qtr[is.finite(plays_4qtr$gtime), ]
+
+
+#simple lm regression
+m1_gtime<-lm(epa~gtime, data =plays_4qtr)
+summary(m1_gtime)
+plot(m1_gtime)
+boxplot(plays_4qtr$gtime)
+
+m2_gtime<-lm(epa~gtime + I(gtime^2), data =plays_4qtr)
+summary(m2_gtime)
+
+anova(m1_gtime,m2_gtime)
+#we see significance in our gtime variable!
+#perhaps exile the outliers??
+#consider nlin models?
 
 #perhaps a ratio is no good, lets define a hard cutoff?
 #greater than 1 score differential per 2 minutes remaining?
 boxplot(plays_4qtr$gtime)
+#3 cat- 0, nonzero, large
+#deal w/ the zero inflation?
+
+#consider a binary model as well?
+
