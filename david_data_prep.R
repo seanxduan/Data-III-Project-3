@@ -2,13 +2,13 @@
 # David Reynolds
 # Data prep
 
-# Read in the data (just games, players, and plays for now)
+# Read in the data
 setwd("~/Downloads/Documents/GitHub/Data-III-Project-3/Data")
 games <- read.csv("games.csv")
 players <- read.csv("players.csv")
 plays <- read.csv("plays.csv")
 
-### Data cleaning
+## Data cleaning
 
 # Check for NAs
 apply(games, 2, function(x) any(is.na(x)))
@@ -35,31 +35,36 @@ plays_yardline <- plays %>%
 
 plays$absoluteYardlineNumber <- ifelse(is.na(plays$absoluteYardlineNumber) == TRUE, ifelse(plays$yardlineSide == plays$possessionTeam, 60 + (50 - plays$yardlineNumber), plays$yardlineNumber + 10), plays$absoluteYardlineNumber)
 
-## Address remaining NAs (STILL NEED TO FIX)
-apply(plays, 2, function(x) any(is.na(x)))
-
-# Calculate pct of plays with NAs in which a DPI occurred
-dpi <- plays %>% 
-  filter(isDefensivePI == "TRUE")
-
-dpi_na <- dpi %>% 
-  filter(is.na(preSnapVisitorScore) & is.na(preSnapHomeScore) & gameClock == "")
-
-nrow(dpi_na)/nrow(dpi) # 92% of rows with NAs have isDefensivePI == TRUE
-
-# Create unique play ID and order plays by it
-plays$gameId <- as.character(plays$gameId)
-plays$playId <- as.character(plays$playId)
-plays$Id <- paste0(plays$gameId, plays$playId)
-plays$Id <- as.numeric(plays$Id)
-
+# Remove rows with NAs for preSnapHomeScore and preSnapVisitorScore
 plays <- plays %>% 
-  arrange(Id)
+  filter(!is.na(preSnapHomeScore) & !is.na(preSnapVisitorScore) & gameClock != "")
 
-### Feature engineering
+# Remove isDefensivePI
+plays$isDefensivePI <- NULL
+
+# Fix gameClock
+library(lubridate)
+library(stringr)
+time <- plays$gameClock
+hat <- str_sub(time, end = -4)
+res <- ms(hat)
+time_s <- minutes(res)
+
+time_s<-str_sub(time_s, end=-2)
+time_s<-as.data.frame(time_s)
+time_s<-as.numeric(unlist(time_s))
+
+## Feature engineering
+
+# Absolute value score differential
+plays$score_diff <- abs(plays$preSnapHomeScore - plays$preSnapVisitorScore)
+
+# Remove preSnapHomeScore and preSnapVisitorScore
+plays$preSnapHomeScore <- NULL
+plays$preSnapVisitorScore <- NULL
 
 # Side binary
 plays$side <- ifelse(plays$possessionTeam == plays$yardlineSide, "other", "own")
 plays$side <- as.factor(plays$side)
 
-# 
+# Fix variable types
