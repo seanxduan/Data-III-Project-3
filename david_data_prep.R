@@ -79,7 +79,7 @@ plays$dbs <- str_sub(plays$personnelD, 13, 13)
 # EPA binary
 plays$epa_bi <- ifelse(plays$epa >= 0, "1", "0")
 
-## Prepare data for modeling
+## More data prep
 
 # Fix variable types
 plays$quarter <- as.factor(plays$quarter)
