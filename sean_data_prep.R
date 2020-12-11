@@ -142,3 +142,22 @@ boxplot(plays_4qtr$gtime)
 
 #consider a binary model as well?
 
+boxplot(plays_4qtr$gtime)
+summary(plays_4qtr$gtime)
+#3 part variable, 0, up to the median, and above median?
+plays_4qtr$mg<-cut(plays_4qtr$gtime, c(-1,0,0.027,21))
+levels(plays_4qtr$mg)
+levels(plays_4qtr$mg) <- c("zero","small","large")
+
+#new model w/ the trinary output
+m3_gtime<-lm(epa~mg, data = plays_4qtr)
+summary(m3_gtime)
+
+#lets try binary output
+plays_4qtr$mg2<-cut(plays_4qtr$gtime, c(-1,0.026,21))
+levels(plays_4qtr$mg2)
+levels(plays_4qtr$mg2) <- c("small","large")
+
+m4_gtime<-lm(epa~mg2, data = plays_4qtr)
+summary(m4_gtime)
+#we clearly see a difference here in our cutoff! perhaps choose diff cutoffs for the trinary?
