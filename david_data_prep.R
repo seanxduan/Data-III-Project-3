@@ -40,6 +40,9 @@ plays <- plays %>%
 # Remove punts
 plays <- plays[!grepl("P", plays$personnelO),]
 
+# Replace penaltyCodes blanks
+plays$penaltyCodes[plays$penaltyCodes == ""] <- "None"
+
 ## Feature engineering
 
 # Absolute value score differential
@@ -53,7 +56,7 @@ plays$side <- as.factor(plays$side)
 library(lubridate)
 library(stringr)
 times <- plays$gameClock
-times <- str_sub(time, end = -4)
+times <- str_sub(times, end = -4)
 times <- as.period(ms(times), unit = "sec")
 times <- str_sub(times, end = -2)
 times <- as.numeric(times)/60
@@ -68,10 +71,15 @@ plays$time_remaining <- ifelse(plays$quarter == "1", plays$time_remaining + 55,
 plays$close_game <- ifelse(plays$time_remaining <= 15 & plays$score_diff <= 7, "1", "0")
 
 # Penalty binary
-
+plays$penalty <- ifelse(plays$penaltyCodes == "None", 0, 1)
 
 # Number of DBs
 plays$dbs <- str_sub(plays$personnelD, 13, 13)
+
+# EPA binary
+plays$epa_bi <- ifelse(plays$epa >= 0, "1", "0")
+
+## Prepare data for modeling
 
 # Fix variable types
 plays$quarter <- as.factor(plays$quarter)
@@ -82,3 +90,21 @@ plays$personnelO <- as.factor(plays$personnelO)
 plays$personnelD <- as.factor(plays$personnelD)
 plays$typeDropback <- as.factor(plays$typeDropback)
 plays$passResult <- as.factor(plays$passResult)
+plays$close_game <- as.factor(plays$close_game)
+plays$penalty <- as.factor(plays$penalty)
+plays$dbs <- as.numeric(plays$dbs)
+plays$epa_bi <- as.factor(plays$epa_bi)
+
+# Select and rename relevant columns
+cor(plays$defendersInTheBox, plays$numberOfPassRushers)
+cor(plays$offensePlayResult, plays$playResult)
+dat <- plays %>% 
+  select(quarter, down, "yards_to_go" = yardsToGo, "play_type" = playType, 
+         "offensive_formation" = offenseFormation, "offensive_personnel" = personnelO, 
+         "defenders_in_box" = defendersInTheBox, "pass_rushers" = numberOfPassRushers, 
+         "defensive_personnel" = personnelD, "dropback_type" = typeDropback, 
+         "absolute_yardline" = absoluteYardlineNumber,  "play_result" = offensePlayResult, 
+         score_diff, side, time_remaining, close_game, penalty, dbs, epa_bi, "pass_result" = passResult)
+
+# Save dat
+write.csv(x = dat, file = "david_modeling.csv")
