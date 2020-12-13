@@ -1,6 +1,7 @@
 library(dplyr)
 library(lubridate)
 library(stringr)
+library(lubridate)
 
 
 #Getting Data
@@ -117,3 +118,146 @@ plays$AvgAgeDef = AveragesDef[match(plays$GamePlay, AveragesDef$GamePlay), 4]
 
 
 head(plays)
+
+#Fix the few missing rows
+
+mean(plays$AvgWeightOff, na.rm = T)
+plays$AvgWeightOff[is.na(plays$AvgWeightOff)] = 218.3606
+
+mean(plays$AvgWeightDef, na.rm = T)
+plays$AvgWeightDef[is.na(plays$AvgWeightDef)] = 214.1209
+
+mean(plays$AvgHeightOff, na.rm = T)
+plays$AvgHeightOff[is.na(plays$AvgHeightOff)] = 73.639
+
+mean(plays$AvgHeightDef, na.rm = T)
+plays$AvgHeightDef[is.na(plays$AvgHeightDef)] = 72.503
+
+mean(plays$AvgAgeOff, na.rm = T)
+plays$AvgAgeOff[is.na(plays$AvgAgeOff)] = 28.965
+
+mean(plays$AvgAgeDef, na.rm = T)
+plays$AvgAgeDef[is.na(plays$AvgAgeDef)] = 28.597
+
+
+
+
+
+#David Data Prep
+
+apply(games, 2, function(x) any(is.na(x)))
+apply(players, 2, function(x) any(is.na(x)))
+apply(plays, 2, function(x) any(is.na(x)))
+
+# See which rows have NAs
+library(dplyr)
+plays_na <- plays %>% 
+  filter(is.na(defendersInTheBox) | is.na(numberOfPassRushers) | is.na(preSnapVisitorScore) | 
+           is.na(preSnapHomeScore) | is.na(absoluteYardlineNumber | is.na(AvgWeightOff) 
+                                           | is.na(AvgWeightDef) | is.na(AvgAgeOff) | is.na(AvgAgeDef)
+                                          | is.na(AvgHeightOff) | is.na(AvgHeightDef)))
+
+# Replace NAs for defendersInTheBox
+mean(plays$defendersInTheBox, na.rm = TRUE)
+plays$defendersInTheBox[is.na(plays$defendersInTheBox)] <- 6
+
+# Replace NAs for numberOfPassRushers
+mean(plays$numberOfPassRushers, na.rm = TRUE)
+plays$numberOfPassRushers[is.na(plays$numberOfPassRushers)] <- 4
+
+# Replace NAs for absoluteYardlineNumber
+plays$yardlineSide = as.character(plays$yardlineSide)
+plays$possessionTeam = as.character(plays$possessionTeam)
+plays$absoluteYardlineNumber <- ifelse(is.na(plays$absoluteYardlineNumber) == TRUE, 
+                                       ifelse(plays$yardlineSide == plays$possessionTeam, 60 + (50 - plays$yardlineNumber), plays$yardlineNumber + 10), plays$absoluteYardlineNumber)
+
+
+# Remove rows with NAs for preSnapHomeScore and preSnapVisitorScore
+plays <- plays %>% 
+  filter(!is.na(preSnapHomeScore) & !is.na(preSnapVisitorScore) & gameClock != "")
+
+# Remove punts
+plays <- plays[!grepl("P", plays$personnelO),]
+
+# Replace penaltyCodes blanks
+plays$penaltyCodes = as.character(plays$penaltyCodes)
+plays$penaltyCodes = ifelse(is.na(plays$penaltyCodes) == T, "None", as.character(plays$penaltyCodes))
+plays$penaltyCodes = as.factor(plays$penaltyCodes)
+
+## Feature engineering
+
+# Absolute value score differential
+plays$score_diff <- abs(plays$preSnapHomeScore - plays$preSnapVisitorScore)
+
+# Side binary
+plays$side <- ifelse(plays$possessionTeam == plays$yardlineSide, "other", "own")
+plays$side <- as.factor(plays$side)
+
+# Time remaining in game
+library(lubridate)
+library(stringr)
+times <- plays$gameClock
+times <- str_sub(times, end = -4)
+times <- as.period(ms(times), unit = "sec")
+times <- str_sub(times, end = -2)
+times <- as.numeric(times)/60
+plays$time_remaining <- times
+plays$quarter <- as.factor(plays$quarter)
+plays$time_remaining <- ifelse(plays$quarter == "1", plays$time_remaining + 55,
+                               ifelse(plays$quarter == "2", plays$time_remaining + 40,
+                                      ifelse(plays$quarter == "3", plays$time_remaining + 25,
+                                             ifelse(plays$quarter == "4", plays$time_remaining + 10, plays$time_remaining))))
+
+# Close game binary
+plays$close_game <- ifelse(plays$time_remaining <= 15 & plays$score_diff <= 7, "1", "0")
+
+# Penalty binary
+plays$penalty <- ifelse(plays$penaltyCodes == "None", 0, 1)
+
+# Number of DBs
+plays$dbs <- str_sub(plays$personnelD, 13, 13)
+
+# EPA binary
+plays$epa_bi <- ifelse(plays$epa >= 0, "1", "0")
+
+## More data prep
+
+# Fix variable types
+plays$quarter <- as.factor(plays$quarter)
+plays$down <- as.factor(plays$down)
+plays$playType <- as.factor(plays$playType)
+plays$offenseFormation <- as.factor(plays$offenseFormation)
+plays$personnelO <- as.factor(plays$personnelO)
+plays$personnelD <- as.factor(plays$personnelD)
+plays$typeDropback <- as.factor(plays$typeDropback)
+plays$passResult <- as.factor(plays$passResult)
+plays$close_game <- as.factor(plays$close_game)
+plays$penalty <- as.factor(plays$penalty)
+plays$dbs <- as.numeric(plays$dbs)
+plays$epa_bi <- as.factor(plays$epa_bi)
+
+# Select and rename relevant columns
+cor(plays$defendersInTheBox, plays$numberOfPassRushers)
+cor(plays$offensePlayResult, plays$playResult)
+dat <- plays %>% 
+  select(quarter, down, "yards_to_go" = yardsToGo, "play_type" = playType, 
+         "offensive_formation" = offenseFormation, "offensive_personnel" = personnelO, 
+         "defenders_in_box" = defendersInTheBox, "pass_rushers" = numberOfPassRushers, 
+         "defensive_personnel" = personnelD, "dropback_type" = typeDropback, 
+         "absolute_yardline" = absoluteYardlineNumber,  "play_result" = offensePlayResult, 
+         score_diff, side, time_remaining, close_game, penalty, dbs, epa_bi, "pass_result" = passResult,
+         AvgWeightOff, AvgWeightDef, AvgHeightOff, AvgHeightDef, AvgAgeOff, AvgAgeDef)
+
+
+apply(dat, 2, function(x) any(is.na(x)))
+
+train = sample(nrow(plays), .80*nrow(plays), replace = F)
+NFL.train = plays[train, ]
+NFL.test = plays[-train, ]
+
+write.csv(NFL.train, "c:/Users/JoeCo/Desktop/NFL_Train.csv")
+write.csv(NFL.test, "c:/Users/JoeCo/Desktop/NFL_Test.csv")
+
+
+
+
