@@ -93,7 +93,8 @@ plays_4qtr<-plays_4qtr[which(complete.cases(plays_4qtr)),]
 library(lubridate)
 library(stringr)
 time<-plays_4qtr$gameClock
-View(time)
+
+
 hat<-str_sub(time, end =-4)
 
 res<-ms(hat)
@@ -161,3 +162,6 @@ levels(plays_4qtr$mg2) <- c("small","large")
 m4_gtime<-lm(epa~mg2, data = plays_4qtr)
 summary(m4_gtime)
 #we clearly see a difference here in our cutoff! perhaps choose diff cutoffs for the trinary?
+
+#lets do some basic graphs work
+gt_1<-ggplot(data = plays_4qtr, aes(x =, y= )

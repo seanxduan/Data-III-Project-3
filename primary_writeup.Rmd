@@ -1,0 +1,95 @@
+---
+title             : "Before/After Bayes"
+author: 
+  - name          : "Sean Xiaohao Duan"
+    affiliation   : "1"
+    email         : "sxdff5@mail.missouri.edu"
+  - name          : "Ronald D. Flores"
+    affiliation   : "1"
+    email         : "ronald.flores@mail.missouri.edu"
+  - name          : "Hyejin Shim"
+    affiliation   : "1"
+    email         : "hs3z8@mail.missouri.edu"
+  
+affiliation:
+  - id            : "1"
+    institution   : "University of Missouri"
+
+
+authornote: |
+  
+  This paper was prepared as part of a submission for a Kaggle Project, as a final project for a Statistics seminar at the University of Missouri. All the authors participated in the seminar.
+
+abstract: |
+  PUT IN AN INTRO/ABSTRACT HERE
+  
+  
+keywords          : "keywords"
+
+
+bibliography      : ["references.bib", "r-references.bib"]
+
+floatsintext      : no
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+linenumbers       : yes
+mask              : no
+
+documentclass     : "apa6"
+classoption       : "man"
+output            :
+  papaja::apa6_pdf:
+    includes:
+      in_header: preamble.tex
+---
+
+```{r setup}
+# Seed for random number generation
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+knitr::knit_hooks$set(purl = knitr::hook_purl)
+```
+
+
+```{r pkgload, include = FALSE}
+#PUT YOUR LIBRARY PACKAGES HERE WHEN YOU ARE READY
+
+library("papaja")
+r_refs("r-references.bib")
+library("ggplot2")
+library("lme4")
+library("brms")
+library("sjPlot")
+```
+
+
+
+```{r child = "david_primary.Rmd"}
+```
+
+
+```{r child = "sean_primary.Rmd"}
+```
+
+
+```{r child = "joe_primary.Rmd"}
+```
+
+
+```{r child = "discussion.Rmd"}
+```
+
+# Computational Details
+All results were obtained using the R system for statistical
+computing [@R-base], version `r paste(R.Version()[6:7], collapse = ".")`,
+especially employing the add-on packages lme4 [@R-lme4] and brms [@R-brms_a;@R-brms_b] for model estimation. Code for reproducing our results can be found at XX.
+
+\newpage
+
+# References
+```{r create_refs}
+r_refs(file = "r-references.bib")
+```
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
