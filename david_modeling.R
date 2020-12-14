@@ -40,20 +40,20 @@ test$side <- ifelse(test$side == "own", "1", "0")
 train <- train %>% 
   select(quarter, down, "yards_to_go" = yardsToGo, "offensive_formation" = offenseFormation, 
          "defenders_in_box" = defendersInTheBox, "pass_rushers" = numberOfPassRushers, 
-         "dropback_type" = typeDropback, "absolute_yardline" = absoluteYardlineNumber, 
-         score_diff, side, time_remaining, close_game, penalty, dbs, epa_bi, weight_diff, 
-         height_diff,age_diff, pass_result)
+         "dropback_type" = typeDropback, "absolute_yardline" = absoluteYardlineNumber, score_diff, 
+         side, time_remaining, close_game, penalty, dbs, weight_diff, height_diff, age_diff, 
+         pass_result)
 
 test <- test %>% 
   select(quarter, down, "yards_to_go" = yardsToGo, "offensive_formation" = offenseFormation, 
          "defenders_in_box" = defendersInTheBox, "pass_rushers" = numberOfPassRushers, 
          "dropback_type" = typeDropback, "absolute_yardline" = absoluteYardlineNumber, score_diff, 
-         side, time_remaining, close_game, penalty, dbs, epa_bi, weight_diff, height_diff, age_diff, 
+         side, time_remaining, close_game, penalty, dbs, weight_diff, height_diff, age_diff, 
          pass_result)
 
 # Make sure the variables are of the right type
 factors <- c("quarter", "down", "offensive_formation", "dropback_type", "side", "close_game", 
-             "penalty", "epa_bi", "pass_result")
+             "penalty", "pass_result")
 train[factors] <- lapply(train[factors], factor)
 test[factors] <- lapply(test[factors], factor)
 
@@ -70,11 +70,23 @@ sapply(test, class)
 # Train the model
 library(caret)
 nfl_glm <- train(pass_result ~., data = train, 
-                  trControl = trainControl(method = "cv", number = 5),
-                  method = "glm", family = "binomial")
+                 trControl = trainControl(method = "cv", number = 5), method = "glm", 
+                 family = "binomial")
 
 # Predict on the test set
 nfl_glm_pred <- predict(nfl_glm, test)
 
-# Report the confusion matrix and accuracy (80%)
+# Report the confusion matrix and accuracy (0.6591)
 confusionMatrix(nfl_glm_pred, test$pass_result)
+
+## LDA
+
+# Fit the model
+nfl_lda <- train(pass_result ~., data = train, trControl = trainControl(method = "cv", number = 5),
+                 method = "lda")
+
+# Predict on the test set
+nfl_lda_pred <- predict(nfl_lda, test)
+
+# Report the confusion matrix and accuracy (0.6582)
+confusionMatrix(nfl_lda_pred, test$pass_result)
