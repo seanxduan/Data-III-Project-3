@@ -41,15 +41,15 @@ train <- train %>%
   select(quarter, down, "yards_to_go" = yardsToGo, "offensive_formation" = offenseFormation, 
          "defenders_in_box" = defendersInTheBox, "pass_rushers" = numberOfPassRushers, 
          "dropback_type" = typeDropback, "absolute_yardline" = absoluteYardlineNumber, 
-         "play_result" = offensePlayResult,score_diff, side, time_remaining, close_game, penalty, 
-         dbs, epa_bi, weight_diff, height_diff,age_diff, pass_result)
+         score_diff, side, time_remaining, close_game, penalty, dbs, epa_bi, weight_diff, 
+         height_diff,age_diff, pass_result)
 
 test <- test %>% 
   select(quarter, down, "yards_to_go" = yardsToGo, "offensive_formation" = offenseFormation, 
          "defenders_in_box" = defendersInTheBox, "pass_rushers" = numberOfPassRushers, 
-         "dropback_type" = typeDropback, "absolute_yardline" = absoluteYardlineNumber, 
-         "play_result" = offensePlayResult, score_diff, side, time_remaining, close_game, penalty, 
-         dbs, epa_bi, weight_diff, height_diff, age_diff, pass_result)
+         "dropback_type" = typeDropback, "absolute_yardline" = absoluteYardlineNumber, score_diff, 
+         side, time_remaining, close_game, penalty, dbs, epa_bi, weight_diff, height_diff, age_diff, 
+         pass_result)
 
 # Make sure the variables are of the right type
 factors <- c("quarter", "down", "offensive_formation", "dropback_type", "side", "close_game", 
@@ -57,8 +57,8 @@ factors <- c("quarter", "down", "offensive_formation", "dropback_type", "side", 
 train[factors] <- lapply(train[factors], factor)
 test[factors] <- lapply(test[factors], factor)
 
-numerics <- c("yards_to_go", "defenders_in_box", "pass_rushers", "absolute_yardline", "play_result", 
-              "score_diff", "time_remaining", "dbs", "weight_diff", "height_diff", "age_diff")
+numerics <- c("yards_to_go", "defenders_in_box", "pass_rushers", "absolute_yardline", "score_diff", 
+              "time_remaining", "dbs", "weight_diff", "height_diff", "age_diff")
 train[numerics] <- sapply(train[numerics], as.numeric)
 test[numerics] <- sapply(test[numerics], as.numeric)
 
@@ -76,5 +76,5 @@ nfl_glm <- train(pass_result ~., data = train,
 # Predict on the test set
 nfl_glm_pred <- predict(nfl_glm, test)
 
-# Report the confusion matrix and accuracy
-table(nfl_glm_pred, test$pass_result)
+# Report the confusion matrix and accuracy (80%)
+confusionMatrix(nfl_glm_pred, test$pass_result)
