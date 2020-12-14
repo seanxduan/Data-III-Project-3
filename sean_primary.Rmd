@@ -152,6 +152,9 @@ plays_4qtr$mg2<-cut(plays_4qtr$gtime, c(-1,0.026,21))
 levels(plays_4qtr$mg2)
 levels(plays_4qtr$mg2) <- c("small","large")
 
+#down 3 scores w/ 6 to go 7-8
+#2 scores until 2 min to go
+
 
 ```
 
