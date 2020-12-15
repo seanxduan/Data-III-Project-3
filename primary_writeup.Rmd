@@ -1,5 +1,6 @@
 ---
-title             : "Before/After Bayes"
+title             : "NFL Big Data Bowl"
+subtitle          : "A Final Project for Data III"
 author: 
   - name          : "Sean Xiaohao Duan"
     affiliation   : "1"
@@ -63,7 +64,9 @@ library("brms")
 library("sjPlot")
 ```
 
+# Introduction
 
+We decided to choose the NFL Big Data Bowl as our Kaggle project because all three of our group members had a reasonable understanding and enjoyment of professional American football. Additionally, we were all very happy with the abundance of real-world data that required minimal finessing and cleaning to get it to an analysis ready position. Lastly, because of the variety and depth of the data available we believed that we would be able to find and answer many interesting questions.
 
 ```{r child = "david_primary.Rmd"}
 ```
