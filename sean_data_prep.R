@@ -121,16 +121,7 @@ plot(plays_4qtr$gtime, plays_4qtr$epa)
 plays_4qtr<-plays_4qtr[is.finite(plays_4qtr$gtime), ]
 
 
-#simple lm regression
-m1_gtime<-lm(epa~gtime, data =plays_4qtr)
-summary(m1_gtime)
-plot(m1_gtime)
-boxplot(plays_4qtr$gtime)
 
-m2_gtime<-lm(epa~gtime + I(gtime^2), data =plays_4qtr)
-summary(m2_gtime)
-
-anova(m1_gtime,m2_gtime)
 #we see significance in our gtime variable!
 #perhaps exile the outliers??
 #consider nlin models?

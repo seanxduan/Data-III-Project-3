@@ -1,4 +1,13 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ## Question - Does "Garbage Time" work as popular opinion concieves it to?
+
+The question that I had for this NFL data set has it's motivation in a common acknowledged phenomena that occurs when a team is either very head or behind with little time left to go. In these circumstances, the likelihood of turning the game around is near nil. Colloquially` this phenomena is called 'garbage time'. Traditionally, when a game enters garbage time, the assumption is that it is significantly easier for the attacking team to score points, as the defending team is no longer focused on reducing scoring opportunities, but instead to run out the clock and avoid injuries.
+
+However, as a statistician, I was curious if the data backed up this commonly held belief. I was unable to find serious statistical analysis of this phenomena and wished to see if I was able to find a firm conclusion one way or another.
 
 ```{r moresetup, include = FALSE}
 library(lme4)
@@ -11,93 +20,37 @@ library(dplyr)
 library(lubridate)
 library(stringr)
 
+#Read in data
 games <- read.csv("nfl-big-data-bowl-2021/games.csv")
 players <- read.csv("nfl-big-data-bowl-2021/players.csv")
 plays <- read.csv("nfl-big-data-bowl-2021/plays.csv")
 
+#Data Cleaning Portion
 # Replace NAs for defendersInTheBox
-mean(plays$defendersInTheBox, na.rm = TRUE)
 plays$defendersInTheBox[is.na(plays$defendersInTheBox)] <- 6
-
 # Replace NAs for numberOfPassRushers
-mean(plays$numberOfPassRushers, na.rm = TRUE)
 plays$numberOfPassRushers[is.na(plays$numberOfPassRushers)] <- 4
-
 # Replace NAs for absoluteYardlineNumber
 plays_yardline <- plays %>% 
   select(yardlineSide, yardlineNumber, absoluteYardlineNumber)
-
 plays$absoluteYardlineNumber <- ifelse(is.na(plays$absoluteYardlineNumber) == TRUE, ifelse(plays$yardlineSide == plays$possessionTeam, 60 + (50 - plays$yardlineNumber), plays$yardlineNumber + 10), plays$absoluteYardlineNumber)
 
-#Garbage time feature engineering 
-#we should only look @ the fourth quarter then?
-#have gameclock and multiply by 15*quarter remaining
-plays_4qtr <-plays[which(plays$quarter ==4),]
-plays_4qtr<-plays_4qtr[which(complete.cases(plays_4qtr)),]
-
-#generate a ratio of times to score differential
-time<-plays_4qtr$gameClock
-
-#Code to turn the text string into what we want using lubridate, have to chop off the last 2 digits
-hat<-str_sub(time, end =-4)
-
-res<-ms(hat)
-time_s<-seconds(res)
-time_s<-str_sub(time_s, end=-2)
-time_s<-as.data.frame(time_s)
-time_s<-as.numeric(unlist(time_s))
-plays_4qtr$time_seconds<-time_s
-#doesn't seem like there is a big fx of raw time to epa, but we aren't accounting for score differential
-plays_4qtr$gtime<-(abs(plays_4qtr$differential)/plays_4qtr$time_seconds)
-
-plot(plays_4qtr$gtime, plays_4qtr$epa)
-#remove inf values
-plays_4qtr<-plays_4qtr[is.finite(plays_4qtr$gtime), ]
-
-#we see significance in our gtime variable!
-#perhaps exile the outliers??
-#consider nlin models?
-
-#perhaps a ratio is no good, lets define a hard cutoff?
-#greater than 1 score differential per 2 minutes remaining?
-boxplot(plays_4qtr$gtime)
-#3 cat- 0, nonzero, large
-#deal w/ the zero inflation?
-
-#consider a binary model as well?
-
-boxplot(plays_4qtr$gtime)
-summary(plays_4qtr$gtime)
-#3 part variable, 0, up to the median, and above median?
-plays_4qtr$mg<-cut(plays_4qtr$gtime, c(-1,0,0.027,21))
-levels(plays_4qtr$mg)
-levels(plays_4qtr$mg) <- c("zero","small","large")
-
-#new model w/ the trinary output
-m3_gtime<-lm(epa~mg, data = plays_4qtr)
-summary(m3_gtime)
-
-#lets try binary output
-plays_4qtr$mg2<-cut(plays_4qtr$gtime, c(-1,0.026,21))
-levels(plays_4qtr$mg2)
-levels(plays_4qtr$mg2) <- c("small","large")
-
-m4_gtime<-lm(epa~mg2, data = plays_4qtr)
-summary(m4_gtime)
 #we clearly see a difference here in our cutoff! perhaps choose diff cutoffs for the trinary?
-
-#lets do some basic graphs work
-gt_1<-ggplot(data = plays_4qtr, aes(x =, y= )
 ```
-
-- Brief description of the motivation for the study and the expected outcome.
-- perhaps touch on the predicted differences between the two approaches
+ 
+For the data cleaning portion this analysis, I started by looking for missing data that would need to be imputed. There were several entries with NA for defenders in box, pass rushers, and absolute yardline number. These were imputed with the most common entry, the mean or the median, for the NA values.
 
 ## Method
 
+My approach to answering this question was to first see if I could define a good metric for 'garbage time', and additionally see if I could find an acceptable metric to judge performance of any given play, to see if plays made in garbage time generated positive or negative value. Looking at the data set, I was able to find a reasonable stand-in for performance on a play, through the statistic of expected points added per play. 
+
+However, garbage time, our first metric, was not as easily available. I needed to engage in feature engineering to create an acceptable metric, which was the next step of my process.
+
+Lastly, I focused on looking at plays made in the fourth quarter only, as there is generally enough time remaining in a game near regardles of the score differential, for comebacks to be possible, in any other quarter. 
+
 ### Feature Engineering
 
-```{r feat_engi,echo=FALSE}
+```{r feat_engi_1,echo=FALSE}
 
 #Garbage time feature engineering 
 #we should only look @ the fourth quarter then?
@@ -107,73 +60,117 @@ plays_4qtr<-plays_4qtr[which(complete.cases(plays_4qtr)),]
 
 #generate a ratio of times to score differential
 time<-plays_4qtr$gameClock
-
 #Code to turn the text string into what we want using lubridate, have to chop off the last 2 digits
 hat<-str_sub(time, end =-4)
-
 res<-ms(hat)
 time_s<-seconds(res)
 time_s<-str_sub(time_s, end=-2)
 time_s<-as.data.frame(time_s)
 time_s<-as.numeric(unlist(time_s))
 plays_4qtr$time_seconds<-time_s
-#doesn't seem like there is a big fx of raw time to epa, but we aren't accounting for score differential
+plays_4qtr$differential<-plays_4qtr$preSnapHomeScore-plays_4qtr$preSnapVisitorScore
+
+#create our garbage time variable
 plays_4qtr$gtime<-(abs(plays_4qtr$differential)/plays_4qtr$time_seconds)
 
-plot(plays_4qtr$gtime, plays_4qtr$epa)
 #remove inf values
 plays_4qtr<-plays_4qtr[is.finite(plays_4qtr$gtime), ]
 
-#we see significance in our gtime variable!
-#perhaps exile the outliers??
-#consider nlin models?
+#make this plot better!
+fe1<-ggplot(data = plays_4qtr, aes(y=gtime))
+fe1+geom_boxplot()
+fe1+geom_histogram(bins=100)
+```
+
+The first step in feature engineering the garbage-time variable was thinking how I believed it would be the most appropriate to design something representative of the ratio of time remaining to score differential. This cuts to the direct issue of having relatively little time remaining to break past a potentially insurmountable score differential, by measuring both of these aspects directly. 
+
+Calculation of the score differential was relatively easy, as it was just the absolute value of the difference between home and away scores for any given play.
+
+Calculation of the time remaining was a little more difficult, but essentially amounted to turning a text string into a numerical vector, representing time remaining in seconds. 
+
+Initially, my garbage time variable was a simple ratio of differential divided by time remaining. I graphed this variable and as you can see from the boxplot and histogram above, it was an extremely right skewed distribution. There was a great deal of plays with a 0 or near 0 garbage time score, and a 'straggling tail' of extreme outliers with much larger garbage time values.
+
+Due to this, I considered further feature engineering, wherein I created a binary cutoff of garbage time, treating it as a categorical variable. This is because the extreme nonlinearity and outliers in the distribution of garbage time values made me hesitant to use linear modeling.
+
+```{r feat_engi_2,echo=FALSE}
 
 #perhaps a ratio is no good, lets define a hard cutoff?
 #greater than 1 score differential per 2 minutes remaining?
-boxplot(plays_4qtr$gtime)
 #3 cat- 0, nonzero, large
 #deal w/ the zero inflation?
 
 #consider a binary model as well?
-
-boxplot(plays_4qtr$gtime)
-summary(plays_4qtr$gtime)
-#3 part variable, 0, up to the median, and above median?
-plays_4qtr$mg<-cut(plays_4qtr$gtime, c(-1,0,0.027,21))
-levels(plays_4qtr$mg)
-levels(plays_4qtr$mg) <- c("zero","small","large")
-
-#new model w/ the trinary output
-m3_gtime<-lm(epa~mg, data = plays_4qtr)
-summary(m3_gtime)
-
-#lets try binary output
 plays_4qtr$mg2<-cut(plays_4qtr$gtime, c(-1,0.026,21))
-levels(plays_4qtr$mg2)
 levels(plays_4qtr$mg2) <- c("small","large")
 
 #down 3 scores w/ 6 to go 7-8
 #2 scores until 2 min to go
-
-
 ```
+
+When looking at transforming our garbage time variable, and considering that it had some extreme outliers, I felt that using the median would be a very reasonable cutpoint for small versus large garbage time values, indicating whether or not a given play was made in 'garbage time'.
 
 ## Modeling (graphs??)
 
-```{r modeling,echo=FALSE}
+```{r modeling1,echo=FALSE}
+#simple lm regression
+m1_gtime<-lm(epa~gtime, data =plays_4qtr)
+tab_model(m1_gtime)
 
-
-
+#lm with exponential effect of gtime
+m2_gtime<-lm(epa~gtime + I(gtime^2), data =plays_4qtr)
+tab_model(m2_gtime)
+anova(m1_gtime,m2_gtime)
 ```
 
-Text here
+I chose to look at both of the forms of my 'garbage time' variable when modeling the question, to see if my results hold up through both versions of the feature.
+
+For our simple linear regression model of garbage time predicting epa, we see that our garbage time variable has what seems to be a fairly strong effect. Surprisingly, the our result is the opposite of what we would've assumed, that the more strongly you were in 'garbage time' the less likely you would be to score. 
+
+Furthermore, when looking at a second linear model that consists of the additional 2nd degree effect of garbage time, we see a real improvement in our model fit, as compared to our first model. This is as expected, given the extreme nonlinearity of our distribution of garbage time data.
+
+```{r modeling2,echo=FALSE}
+#simple regression w/ categorical garb time variable
+m4_gtime<-lm(epa~mg2, data = plays_4qtr)
+tab_model(m4_gtime)
+
+anova(m1_gtime,m2_gtime,m4_gtime)
+```
+
+Looking at our output for our binary input variable for garbage time, we see a few things of note. First, that as our previous linear models show, the effect of being in garbage time is a reduced epa per play, which again, is the opposite of what we would've assumed. Additionally, we see that the variable is very significant.
+
+Lastly, when comparing our binary input variable engineered feature against our two continous versions of the feature, we see even more significant improvement in fit, indicating that having epa as a binary variable is more reasonable than our continuous design.
 
 ## Results (graphs??)
 
 ```{r results,echo=FALSE}
+#lets do some basic graphs work
+gt_1<-ggplot(data = plays_4qtr, aes(x = gtime, y=epa, color =mg2 ))
+gt_1+geom_point()+coord_cartesian(xlim = c(0, 3))+geom_smooth()+labs(
+    x = "Garbage Time (score differential/time remaining)", 
+    y = "Expected Points Added", 
+    colour = "Category of Garbage Time",
+    title = "Effect of Continous Garbage Time on EPA",
+    subtitle = "With additional linear model fit line"
+  )
 
+gt_2<-ggplot(data = plays_4qtr, aes(x = I(gtime)^(1/2), y=epa, color =mg2 ))
+gt_2+geom_point()+coord_cartesian(xlim = c(0, 3))+labs(
+    x = "Square Root Transformation of Garbage Time (score differential/time remaining)", 
+    y = "Expected Points Added", 
+    colour = "Category of Garbage Time",
+    title = "Effect of Continous Transformed Garbage Time on EPA",
+    subtitle = "With additional linear model fit line"
+  )
 
-
+gt_3<-ggplot(data = plays_4qtr, aes(x = mg2, y=epa, color =mg2 ))
+gt_3+geom_boxplot()+labs(
+    x = "Garbage Time Category", 
+    y = "Expected Points Added", 
+    colour = "Category of Garbage Time",
+    title = "Effect of Categorical Garbage Time on EPA"
+      )
 ```
 
-Text here
+Looking at our graphical output, we can reach some fairly obvious conclusions. First and foremost, I am relatively confident that for some reason or another, being in garbage time leads to poorer scoring through the pass. Conceptually, I would hesitate to attribute it to player effort, at least without some metric to measure and control for it in our statistical analysis. It perhaps seems more reasonable to attribute it to differences in play calling, as my naive understanding of plays that have worse expected value, but perhaps a small chance for a much larger gain (think onside kicks) that are only called when in a pure desperation situation - as our garbage time measure attempts to describe.
+
+Additionally 

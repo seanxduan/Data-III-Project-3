@@ -83,7 +83,7 @@ library("sjPlot")
 # Computational Details
 All results were obtained using the R system for statistical
 computing [@R-base], version `r paste(R.Version()[6:7], collapse = ".")`,
-especially employing the add-on packages lme4 [@R-lme4] and brms [@R-brms_a;@R-brms_b] for model estimation. Code for reproducing our results can be found at XX.
+especially employing the add-on packages lme4 [@R-lme4] and brms [@R-brms_a;@R-brms_b] for model estimation. Code for reproducing our results can be found at https://github.com/seanxduan/Data-III-Project-3.
 
 \newpage
 
