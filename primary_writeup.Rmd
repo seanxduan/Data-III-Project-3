@@ -55,13 +55,16 @@ knitr::knit_hooks$set(purl = knitr::hook_purl)
 
 ```{r pkgload, include = FALSE}
 #PUT YOUR LIBRARY PACKAGES HERE WHEN YOU ARE READY
-
-library("papaja")
 r_refs("r-references.bib")
-library("ggplot2")
-library("lme4")
-library("brms")
-library("sjPlot")
+library(lme4)
+library(ggplot2)
+library(papaja)
+library(sjPlot)
+library(papaja)
+library(brms)
+library(dplyr)
+library(lubridate)
+library(stringr)
 ```
 
 # Introduction

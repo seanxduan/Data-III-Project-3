@@ -140,7 +140,7 @@ Looking at our output for our binary input variable for garbage time, we see a f
 
 Lastly, when comparing our binary input variable engineered feature against our two continous versions of the feature, we see even more significant improvement in fit, indicating that having epa as a binary variable is more reasonable than our continuous design.
 
-## Results (graphs??)
+## Results
 
 ```{r results,echo=FALSE}
 #lets do some basic graphs work
@@ -175,4 +175,4 @@ Looking at our graphical output, we can reach some fairly obvious conclusions. F
 
 ## Discussion of problems
 
-There was one primary challenge with answering this specific question with this specific dataset, which was the feature engineering and the statistical thinking and modelling around that feature. Engineering a novel feature that corresponds to a commonly held belief or phenomena in Football was not as simple as it seemed. First, there was very little in the way of previously done statistical analysis on the concept of 'garbage time', and there was little domain specific expertise available when I researched whether or not various professional football thinkers had plumbed the issues depths. Furthermore, there was a good deal of critical thinking required to determine how best to quantify the garbage time metric I ended up developing, especially considering that the feature that I had engineered was significantly non-linear in distribution, with a large amount of zero-inflation as well. I believe that due to these issues, I was able to learn a great deal about how to handle non-linear data distributions, and I felt pleasantly surprised to find what seemed to be a statistically significant result that opposed my initial beliefs about the problem.
+There was one primary challenge with answering this specific question with this specific dataset, which was the feature engineering and the statistical thinking and modeling around that feature. Engineering a novel feature that corresponds to a commonly held belief or phenomena in Football was not as simple as it seemed. First, there was very little in the way of previously done statistical analysis on the concept of 'garbage time', and there was little domain specific expertise available when I researched whether or not various professional football thinkers had plumbed the issues depths. Furthermore, there was a good deal of critical thinking required to determine how best to quantify the garbage time metric I ended up developing, especially considering that the feature that I had engineered was significantly non-linear in distribution, with a large amount of zero-inflation as well. I believe that due to these issues, I was able to learn a great deal about how to handle non-linear data distributions, and I felt pleasantly surprised to find what seemed to be a statistically significant result that opposed my initial beliefs about the problem.

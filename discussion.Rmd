@@ -5,3 +5,4 @@ leave individual thoughts in own section???
 
 Great job everyone!
 
+Overall, this was a very interesting kaggle competition and there were many ways of going about our solutions. We did not initially believe that feature engineering would've taken on as large of a role as it ended up doing. Furthermore, I feel like we were able to provide real value in our analysis of our questions.
