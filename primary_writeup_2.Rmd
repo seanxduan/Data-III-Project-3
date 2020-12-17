@@ -69,10 +69,6 @@ The data was split into an 80% training set and a 20% test set so that all model
 ```
 
 
-```{r child = "joe_primary.Rmd"}
-```
-
-
 ```{r child = "discussion.Rmd"}
 ```
 
