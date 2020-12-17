@@ -1,163 +1,25 @@
-## Question - Does "Garbage Time" work as popular opinion concieves it to?
+## **Question - Does "Garbage Time" work as popular opinion concieves it to?**
 
-```{r moresetup, include = FALSE}
-library(lme4)
-library(ggplot2)
-library(papaja)
-library(sjPlot)
-library(papaja)
-library(brms)
-library(dplyr)
-library(lubridate)
-library(stringr)
+```{r joesetup, include = FALSE}
 
-games <- read.csv("nfl-big-data-bowl-2021/games.csv")
-players <- read.csv("nfl-big-data-bowl-2021/players.csv")
-plays <- read.csv("nfl-big-data-bowl-2021/plays.csv")
-
-# Replace NAs for defendersInTheBox
-mean(plays$defendersInTheBox, na.rm = TRUE)
-plays$defendersInTheBox[is.na(plays$defendersInTheBox)] <- 6
-
-# Replace NAs for numberOfPassRushers
-mean(plays$numberOfPassRushers, na.rm = TRUE)
-plays$numberOfPassRushers[is.na(plays$numberOfPassRushers)] <- 4
-
-# Replace NAs for absoluteYardlineNumber
-plays_yardline <- plays %>% 
-  select(yardlineSide, yardlineNumber, absoluteYardlineNumber)
-
-plays$absoluteYardlineNumber <- ifelse(is.na(plays$absoluteYardlineNumber) == TRUE, ifelse(plays$yardlineSide == plays$possessionTeam, 60 + (50 - plays$yardlineNumber), plays$yardlineNumber + 10), plays$absoluteYardlineNumber)
-
-#Garbage time feature engineering 
-#we should only look @ the fourth quarter then?
-#have gameclock and multiply by 15*quarter remaining
-plays_4qtr <-plays[which(plays$quarter ==4),]
-plays_4qtr<-plays_4qtr[which(complete.cases(plays_4qtr)),]
-
-#generate a ratio of times to score differential
-time<-plays_4qtr$gameClock
-
-#Code to turn the text string into what we want using lubridate, have to chop off the last 2 digits
-hat<-str_sub(time, end =-4)
-
-res<-ms(hat)
-time_s<-seconds(res)
-time_s<-str_sub(time_s, end=-2)
-time_s<-as.data.frame(time_s)
-time_s<-as.numeric(unlist(time_s))
-plays_4qtr$time_seconds<-time_s
-#doesn't seem like there is a big fx of raw time to epa, but we aren't accounting for score differential
-plays_4qtr$gtime<-(abs(plays_4qtr$differential)/plays_4qtr$time_seconds)
-
-plot(plays_4qtr$gtime, plays_4qtr$epa)
-#remove inf values
-plays_4qtr<-plays_4qtr[is.finite(plays_4qtr$gtime), ]
-
-#we see significance in our gtime variable!
-#perhaps exile the outliers??
-#consider nlin models?
-
-#perhaps a ratio is no good, lets define a hard cutoff?
-#greater than 1 score differential per 2 minutes remaining?
-boxplot(plays_4qtr$gtime)
-#3 cat- 0, nonzero, large
-#deal w/ the zero inflation?
-
-#consider a binary model as well?
-
-boxplot(plays_4qtr$gtime)
-summary(plays_4qtr$gtime)
-#3 part variable, 0, up to the median, and above median?
-plays_4qtr$mg<-cut(plays_4qtr$gtime, c(-1,0,0.027,21))
-levels(plays_4qtr$mg)
-levels(plays_4qtr$mg) <- c("zero","small","large")
-
-#new model w/ the trinary output
-m3_gtime<-lm(epa~mg, data = plays_4qtr)
-summary(m3_gtime)
-
-#lets try binary output
-plays_4qtr$mg2<-cut(plays_4qtr$gtime, c(-1,0.026,21))
-levels(plays_4qtr$mg2)
-levels(plays_4qtr$mg2) <- c("small","large")
-
-m4_gtime<-lm(epa~mg2, data = plays_4qtr)
-summary(m4_gtime)
-#we clearly see a difference here in our cutoff! perhaps choose diff cutoffs for the trinary?
-
-#lets do some basic graphs work
-gt_1<-ggplot(data = plays_4qtr, aes(x =, y= )
 ```
 
 - Brief description of the motivation for the study and the expected outcome.
 - perhaps touch on the predicted differences between the two approaches
 
-## Method
+### **Method**
 
-### Feature Engineering
+### **Feature Engineering**
 
-```{r feat_engi,echo=FALSE}
+```{r joe feat_engi,echo=FALSE}
 
-#Garbage time feature engineering 
-#we should only look @ the fourth quarter then?
-#have gameclock and multiply by 15*quarter remaining
-plays_4qtr <-plays[which(plays$quarter ==4),]
-plays_4qtr<-plays_4qtr[which(complete.cases(plays_4qtr)),]
-
-#generate a ratio of times to score differential
-time<-plays_4qtr$gameClock
-
-#Code to turn the text string into what we want using lubridate, have to chop off the last 2 digits
-hat<-str_sub(time, end =-4)
-
-res<-ms(hat)
-time_s<-seconds(res)
-time_s<-str_sub(time_s, end=-2)
-time_s<-as.data.frame(time_s)
-time_s<-as.numeric(unlist(time_s))
-plays_4qtr$time_seconds<-time_s
-#doesn't seem like there is a big fx of raw time to epa, but we aren't accounting for score differential
-plays_4qtr$gtime<-(abs(plays_4qtr$differential)/plays_4qtr$time_seconds)
-
-plot(plays_4qtr$gtime, plays_4qtr$epa)
-#remove inf values
-plays_4qtr<-plays_4qtr[is.finite(plays_4qtr$gtime), ]
-
-#we see significance in our gtime variable!
-#perhaps exile the outliers??
-#consider nlin models?
-
-#perhaps a ratio is no good, lets define a hard cutoff?
-#greater than 1 score differential per 2 minutes remaining?
-boxplot(plays_4qtr$gtime)
-#3 cat- 0, nonzero, large
-#deal w/ the zero inflation?
-
-#consider a binary model as well?
-
-boxplot(plays_4qtr$gtime)
-summary(plays_4qtr$gtime)
-#3 part variable, 0, up to the median, and above median?
-plays_4qtr$mg<-cut(plays_4qtr$gtime, c(-1,0,0.027,21))
-levels(plays_4qtr$mg)
-levels(plays_4qtr$mg) <- c("zero","small","large")
-
-#new model w/ the trinary output
-m3_gtime<-lm(epa~mg, data = plays_4qtr)
-summary(m3_gtime)
-
-#lets try binary output
-plays_4qtr$mg2<-cut(plays_4qtr$gtime, c(-1,0.026,21))
-levels(plays_4qtr$mg2)
-levels(plays_4qtr$mg2) <- c("small","large")
 
 
 ```
 
-## Modeling (graphs??)
+### **Modeling**
 
-```{r modeling,echo=FALSE}
+```{r joe modeling,echo=FALSE}
 
 
 
@@ -165,9 +27,9 @@ levels(plays_4qtr$mg2) <- c("small","large")
 
 Text here
 
-## Results (graphs??)
+### **Results**
 
-```{r results,echo=FALSE}
+```{r joeresults,echo=FALSE}
 
 
 

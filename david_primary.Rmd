@@ -1,4 +1,4 @@
-## Question - How accurately can the outcome of a pass play be predicted?
+## **Question - How accurately can the outcome of a pass play be predicted?**
 
 Completion percentage, which is the ratio of completed passes to total number of passes attempted, is considered one of the most important statistics used to evaluate a quarterback’s performance. Of interest is predicting whether a pass is completed or not given other information about the play. This could possibly yield valuable information about which kinds of plays are easiest for the secondary to defend against.
 
@@ -8,15 +8,15 @@ Models that were considered include: logistic regression, L1 penalized logistic 
 
 All of these models are very commonly used in the case of a binary classification problem. Below is a table containing the test classification rate for all 14 models.
 
-![](/Users/davidreynolds/Downloads/Documents/GitHub/Data-III-Project-3/Images/model_performance.jpg)
+![](Images/model_performance.jpg)
 
 It is disappointing that a more flexible model did not perform better than logistic regression, and it is interesting that the test classification rates are so close to the percentage of completed passes in the training and test sets, which is about 65%. The classification rates are only slightly better than random guessing, so it appears that the outcome of a pass play cannot be predicted very accurately using these covariates.
 
 Below is a variable importance plot for the best tree model, which was boosting. The importance scores for type of dropback and number of pass rushers were high for both boosting and the classification tree. The importance score for third down was high for both boosting and the classification tree as well. In comparison, the total time remaining in the game and player attributes such as age, weight, and height had high importance scores for both bagging and random forest.
 
-![](/Users/davidreynolds/Downloads/Documents/GitHub/Data-III-Project-3/Images/variable_importance.jpg)
+![](Images/variable_importance.jpg)
 
-```{r moresetup, eval = FALSE}
+```{r moresetup, eval=FALSE, include=FALSE}
 library(caret)
 library(DT)
 library(dplyr)

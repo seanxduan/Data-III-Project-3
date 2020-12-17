@@ -3,18 +3,13 @@ title             : "NFL Big Data Bowl"
 subtitle          : "A Final Project for Data III"
 author: 
   - name          : "Sean Xiaohao Duan"
-    affiliation   : "1"
     email         : "sxdff5@mail.missouri.edu"
-  - name          : "Ronald D. Flores"
-    affiliation   : "1"
-    email         : "ronald.flores@mail.missouri.edu"
-  - name          : "Hyejin Shim"
-    affiliation   : "1"
-    email         : "hs3z8@mail.missouri.edu"
+  - name          : "David James Reynolds"
+    email         : "davidreynolds@mail.missouri.edu"
+  - name          : "Joseph Michael Connelly"
+    email         : "jmctcg@mail.missouri.edu"
   
-affiliation:
-  - id            : "1"
-    institution   : "University of Missouri"
+institution   : "University of Missouri"
 
 
 authornote: |
@@ -22,7 +17,8 @@ authornote: |
   This paper was prepared as part of a submission for a Kaggle Project, as a final project for a Statistics seminar at the University of Missouri. All the authors participated in the seminar.
 
 abstract: |
-  PUT IN AN INTRO/ABSTRACT HERE
+  We decided to choose the NFL Big Data Bowl as our Kaggle project because all three of our group members had a reasonable understanding and enjoyment of professional American football. Additionally, we were all very happy with the abundance of real-world data that required minimal finessing and cleaning to get it to an analysis ready position. Lastly, because of the variety and depth of the data available we believed that we would be able to find and answer many interesting questions.
+
   
 date: "12/17/2020"
 output: html_document
@@ -41,9 +37,29 @@ library(lubridate)
 library(stringr)
 ```
 
-# Introduction
+# **Introduction**
 
-We decided to choose the NFL Big Data Bowl as our Kaggle project because all three of our group members had a reasonable understanding and enjoyment of professional American football. Additionally, we were all very happy with the abundance of real-world data that required minimal finessing and cleaning to get it to an analysis ready position. Lastly, because of the variety and depth of the data available we believed that we would be able to find and answer many interesting questions.
+We decided to choose the NFL Big Data Bowl as our Kaggle project because all three of our group members had a reasonable understanding and enjoyment of professional American football. Additionally, we were all very happy with the abundance of real-world data that required minimal finessing and cleaning to get it to an analysis ready position. Lastly, because of the variety and depth of the data available we believed that we would be able to find and answer many interesting questions. 
+
+The goal of the project was initially to see if we can glean insights on passing play performance in NFL games. The data included spatio-temporal data for each player per play, as well as demographic information. Furthermore, detailed information on each play included yards remaining to first down, yardage on field, time remaining, composition of defensive and offensive lines, a text string describing the play, as well as penalty information.
+
+The three questions we decided to answer to gain insight on passing plays were as follows.
+
+1. How accurately can the outcome of a pass play be predicted?
+2. Does the colloquial phenomena of 'Garbage Time' affect passing performance negatively or positively?
+3. What defensive personnel should be implemented based on pre-snap information?
+
+# **Data cleaning/feature engineering**
+
+NA values were found for defendersInTheBox, numberOfPassRushers, preSnapVisitorScore, preSnapHomeScore, and absoluteYardlineNumber. The NAs for defendersInTheBox were replaced with the average number of defenders in the box, and the NAs for numberOfPassRushers was also replaced with the mean for that variable. The NAs for absoluteYardlineNumber were replaced with the true absolute yardline number. These values were able to be recovered because the offense’s position on the field is recorded for each play.
+
+Plays with NAs for preSnapVisitorScore and preSnapHomeScore as well as empty strings for gameClock were removed, as these rows only accounted for approximately 3% of the plays dataset. Blank strings for penaltyCodes were replaced with “None,” and punting plays were removed as well, as only passing plays are of interest in this analysis.
+
+For each play, the average age, weight, and height for all players on offense and defense were computed. However, it is important to note that this does not include players on the offensive and defensive line, as these positions are not included in the players dataset, which was used to engineer these variables. NAs for average weight and average height were replaced with the averages for those variables, calculated excluding the NAs.
+
+Additional variables that were engineered include the absolute value of the difference between preSnapHomeScore and preSnapVisitorScore, a variable called side that indicates whether the defense is on its own side of the field or not, and a variable called time_remaining with the total amount of time in minutes remaining in the game, accounting for overtime. A variable called close_game was also engineered to indicate whether or not the game is close, and dbs is the number of defensive backs on the field for each play.
+
+The data was split into an 80% training set and a 20% test set so that all models for all questions were fit on the same training set and evaluated using the same test set. Additional data engineering steps, which are for the most part only relevant to the specific question being answered, are detailed in the sections that follow.
 
 ```{r child = "david_primary.Rmd"}
 ```

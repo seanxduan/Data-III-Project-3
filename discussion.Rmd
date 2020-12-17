@@ -1,3 +1,7 @@
 # General Discussion
 
-Overall, this was a very interesting kaggle competition and there were many ways of going about our solutions. We did not initially believe that feature engineering would've taken on as large of a role as it ended up doing. Furthermore, I feel like we were able to provide real value in our analysis of our questions.
+Overall, this was a very interesting kaggle competition and there were many ways of going about our solutions. We did not initially believe that feature engineering would've taken on as large of a role as it ended up doing. Furthermore, we were able to provide real value in our analysis of our questions.
+
+If we had more time and computational power, we could've looked more significantly at the player tracking data. Additionally, we could've had a finer range of parameter values, especially considering how long model building took given our current computing processes. It would've also been interesting to see if we could've compared or contrasted our models and results against other years of NFL data, but we were only provided with one year of NFL data.
+
+The process of working through GitHub and using a shared repository with proper master/slave organization for the main document and each question's subdocument allowed for more effective and efficient collaboration. As a learning experience, it was great added value to have a workflow that would more closely replicate what would happen in a professional environment.

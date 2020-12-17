@@ -3,13 +3,13 @@ output:
   html_document: default
   pdf_document: default
 ---
-## Question - Does "Garbage Time" work as popular opinion concieves it to?
+## **Question - Does "Garbage Time" work as popular opinion concieves it to?**
 
 The question that I had for this NFL data set has it's motivation in a common acknowledged phenomena that occurs when a team is either very head or behind with little time left to go. In these circumstances, the likelihood of turning the game around is near nil. Colloquially` this phenomena is called 'garbage time'. Traditionally, when a game enters garbage time, the assumption is that it is significantly easier for the attacking team to score points, as the defending team is no longer focused on reducing scoring opportunities, but instead to run out the clock and avoid injuries.
 
 However, as a statistician, I was curious if the data backed up this commonly held belief. I was unable to find serious statistical analysis of this phenomena and wished to see if I was able to find a firm conclusion one way or another.
 
-```{r moresetup, include = FALSE}
+```{r seansetup, include = FALSE}
 library(lme4)
 library(ggplot2)
 library(papaja)
@@ -40,7 +40,7 @@ plays$absoluteYardlineNumber <- ifelse(is.na(plays$absoluteYardlineNumber) == TR
  
 For the data cleaning portion this analysis, I started by looking for missing data that would need to be imputed. There were several entries with NA for defenders in box, pass rushers, and absolute yardline number. These were imputed with the most common entry, the mean or the median, for the NA values.
 
-## Method
+### **Method**
 
 My approach to answering this question was to first see if I could define a good metric for 'garbage time', and additionally see if I could find an acceptable metric to judge performance of any given play, to see if plays made in garbage time generated positive or negative value. Looking at the data set, I was able to find a reasonable stand-in for performance on a play, through the statistic of expected points added per play. 
 
@@ -48,7 +48,7 @@ However, garbage time, our first metric, was not as easily available. I needed t
 
 Lastly, I focused on looking at plays made in the fourth quarter only, as there is generally enough time remaining in a game near regardles of the score differential, for comebacks to be possible, in any other quarter. 
 
-### Feature Engineering
+### **Feature Engineering**
 
 ```{r feat_engi_1,echo=FALSE}
 
@@ -92,7 +92,7 @@ fe1+geom_boxplot()+coord_cartesian(ylim = c(0, 1))+labs(
     subtitle = "Note - graph only shows garbage time from 0 to 1, larger outliers are present")
 ```
 
-Initially, my garbage time variable was a simple ratio of differential divided by time remaining. I graphed this variable and as you can see from \@ref(tab:fe_boxplot) it is an extremely skewed boxplot, with the mean, median, and quartiles being very compressed and with significant outliers.
+Initially, my garbage time variable was a simple ratio of differential divided by time remaining. I graphed this variable and as you can see from the boxplot above it is an extremely skewed boxplot, with the mean, median, and quartiles being very compressed and with significant outliers.
 
 ```{r fe_hist, fig.cap= "Histogram of Distribution of Garbage Time Metric", echo=FALSE}
 fe2<-ggplot(data = plays_4qtr, aes(gtime))
@@ -102,7 +102,7 @@ fe2+geom_histogram(bins=100)+coord_cartesian(xlim = c(0, 5))+labs(
     title = "Histogram of Distribution of Garbage Time Metric")
 ```
 
-Additionally, in \@ref(tab:fe_hist) above, it was an extremely right skewed distribution. There was a great deal of plays with a 0 or near 0 garbage time score, and a 'straggling tail' of extreme outliers with much larger garbage time values.
+Additionally, in the histogram above, it was an extremely right skewed distribution. There was a great deal of plays with a 0 or near 0 garbage time score, and a 'straggling tail' of extreme outliers with much larger garbage time values.
 
 Due to this, I considered further feature engineering, wherein I created a binary cutoff of garbage time, treating it as a categorical variable. This is because the extreme nonlinearity and outliers in the distribution of garbage time values made me hesitant to use linear modeling.
 
@@ -123,7 +123,7 @@ levels(plays_4qtr$mg2) <- c("small","large")
 
 When looking at transforming our garbage time variable, and considering that it had some extreme outliers, I felt that using the median would be a very reasonable cutpoint for small versus large garbage time values, indicating whether or not a given play was made in 'garbage time'.
 
-## Modeling (graphs??)
+### **Modeling**
 
 ```{r modeling1,echo=FALSE}
 #simple lm regression
@@ -133,7 +133,7 @@ tab_model(m1_gtime)
 #lm with exponential effect of gtime
 m2_gtime<-lm(epa~gtime + I(gtime^2), data =plays_4qtr)
 tab_model(m2_gtime)
-anova(m1_gtime,m2_gtime)
+#anova(m1_gtime,m2_gtime)
 ```
 
 I chose to look at both of the forms of my 'garbage time' variable when modeling the question, to see if my results hold up through both versions of the feature.
@@ -147,16 +147,16 @@ Furthermore, when looking at a second linear model that consists of the addition
 m4_gtime<-lm(epa~mg2, data = plays_4qtr)
 tab_model(m4_gtime)
 
-anova(m1_gtime,m2_gtime,m4_gtime)
+#anova(m1_gtime,m2_gtime,m4_gtime)
 ```
 
 Looking at our output for our binary input variable for garbage time, we see a few things of note. First, that as our previous linear models show, the effect of being in garbage time is a reduced epa per play, which again, is the opposite of what we would've assumed. Additionally, we see that the variable is very significant.
 
 Lastly, when comparing our binary input variable engineered feature against our two continous versions of the feature, we see even more significant improvement in fit, indicating that having epa as a binary variable is more reasonable than our continuous design.
 
-## Results
+### **Results**
 
-```{r results,echo=FALSE}
+```{r results, echo=FALSE, message=FALSE, warning=FALSE}
 #lets do some basic graphs work
 gt_1<-ggplot(data = plays_4qtr, aes(x = gtime, y=epa, color =mg2 ))
 gt_1+geom_point()+coord_cartesian(xlim = c(0, 3))+geom_smooth()+labs(
@@ -187,6 +187,6 @@ gt_3+geom_boxplot()+labs(
 
 Looking at our graphical output, we can reach some fairly obvious conclusions. First and foremost, I am relatively confident that for some reason or another, being in garbage time leads to poorer scoring through the pass. Conceptually, I would hesitate to attribute it to player effort, at least without some metric to measure and control for it in our statistical analysis. It perhaps seems more reasonable to attribute it to differences in play calling, as my naive understanding of plays that have worse expected value, but perhaps a small chance for a much larger gain (for example, onside kicks) that are only called when in a pure desperation situation - as our garbage time measure attempts to describe.
 
-## Discussion of problems
+### **Discussion of problems**
 
 There was one primary challenge with answering this specific question with this specific dataset, which was the feature engineering and the statistical thinking and modeling around that feature. Engineering a novel feature that corresponds to a commonly held belief or phenomena in Football was not as simple as it seemed. First, there was very little in the way of previously done statistical analysis on the concept of 'garbage time', and there was little domain specific expertise available when I researched whether or not various professional football thinkers had plumbed the issues depths. Furthermore, there was a good deal of critical thinking required to determine how best to quantify the garbage time metric I ended up developing, especially considering that the feature that I had engineered was significantly non-linear in distribution, with a large amount of zero-inflation as well. I believe that due to these issues, I was able to learn a great deal about how to handle non-linear data distributions, and I felt pleasantly surprised to find what seemed to be a statistically significant result that opposed my initial beliefs about the problem.
