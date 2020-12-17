@@ -188,7 +188,9 @@ MSElasso = mean((Ridge.data.test$epa - lasso.predFull) ^ 2)
 
 ### **Modeling**
 
-So, now we have ten different models, each built from the subset of data from each of the top ten defensive personnel units. 
+So, now we have ten different models for each Ridge Regression and Lasso Regression, each built from the subset of data from each of the top ten defensive personnel units. From here, I will make predictions on the test set with each model. In essence, what I am doing here is saying, "If we run this defensive personnel in this situation, what is our expected EPA?" 
+
+With the ten predictions for each type of model, I then develop the MSE. This is done by using the actual defensive personnel used in each play type, and using that prediction. Again, to explain better, say that the first play was run using a defensive personnel of 3 DL, 2 LB, 6 DB, then we would take the EPA prediction from the model that was derived from all of the plays from the subset of 3 DL, 2 LB, 6 DB plays.
 
 ```{r analysis2, echo = F, include = F}
 #subset 1
@@ -411,6 +413,9 @@ Ridge.MSEl = mean((Ridge.data.test$epa - Ridge.data.test$BestPredL) ^ 2)
 
 
 ### **Results**
+After completing this analysis, I got a MSE for the Ridge Model of `r Ridge.MSEr` and an MSE for the Lasso model of `r Ridge.MSEl`. These results are in fact better than the gradient boosting model as well as better than just guessing zero for each EPA. Therefore, the rest of the analysis will be done with Ridge model. 
+
+
 
 ```{r analysis end, echo = F, include = F}
 ### Only using the Ridge model now
@@ -437,3 +442,4 @@ for (i in 1:nrow(Ridge.data.test)){
 }
 ```
 
+Now, using the Ridge model, the last thing that I wanted to do was to find the optimal defensive formation
