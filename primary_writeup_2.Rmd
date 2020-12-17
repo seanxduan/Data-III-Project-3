@@ -23,19 +23,13 @@ authornote: |
 
 abstract: |
   PUT IN AN INTRO/ABSTRACT HERE
+  
+date: "12/17/2020"
+output: html_document
 ---
-
-```{r setup}
-# Seed for random number generation
-set.seed(42)
-knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
-knitr::knit_hooks$set(purl = knitr::hook_purl)
-```
-
 
 ```{r pkgload, include = FALSE}
 #PUT YOUR LIBRARY PACKAGES HERE WHEN YOU ARE READY
-r_refs("r-references.bib")
 library(lme4)
 library(ggplot2)
 library(papaja)

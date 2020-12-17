@@ -1,7 +1,7 @@
 ---
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 ## Question - Does "Garbage Time" work as popular opinion concieves it to?
 
@@ -76,10 +76,6 @@ plays_4qtr$gtime<-(abs(plays_4qtr$differential)/plays_4qtr$time_seconds)
 #remove inf values
 plays_4qtr<-plays_4qtr[is.finite(plays_4qtr$gtime), ]
 
-#make this plot better!
-fe1<-ggplot(data = plays_4qtr, aes(y=gtime))
-fe1+geom_boxplot()
-fe1+geom_histogram(bins=100)
 ```
 
 The first step in feature engineering the garbage-time variable was thinking how I believed it would be the most appropriate to design something representative of the ratio of time remaining to score differential. This cuts to the direct issue of having relatively little time remaining to break past a potentially insurmountable score differential, by measuring both of these aspects directly. 
@@ -88,7 +84,25 @@ Calculation of the score differential was relatively easy, as it was just the ab
 
 Calculation of the time remaining was a little more difficult, but essentially amounted to turning a text string into a numerical vector, representing time remaining in seconds. 
 
-Initially, my garbage time variable was a simple ratio of differential divided by time remaining. I graphed this variable and as you can see from the boxplot and histogram above, it was an extremely right skewed distribution. There was a great deal of plays with a 0 or near 0 garbage time score, and a 'straggling tail' of extreme outliers with much larger garbage time values.
+```{r fe_boxplot,fig.cap= "Boxplot of Distribution of Garbage Time Metric", echo=FALSE}
+fe1<-ggplot(data = plays_4qtr, aes(y=gtime))
+fe1+geom_boxplot()+coord_cartesian(ylim = c(0, 1))+labs(
+    y = "Garbage Time (Differential/Time Remaining)", 
+    title = "Boxplot of Distribution of Garbage Time Metric",
+    subtitle = "Note - graph only shows garbage time from 0 to 1, larger outliers are present")
+```
+
+Initially, my garbage time variable was a simple ratio of differential divided by time remaining. I graphed this variable and as you can see from \@ref(tab:fe_boxplot) it is an extremely skewed boxplot, with the mean, median, and quartiles being very compressed and with significant outliers.
+
+```{r fe_hist, fig.cap= "Histogram of Distribution of Garbage Time Metric", echo=FALSE}
+fe2<-ggplot(data = plays_4qtr, aes(gtime))
+fe2+geom_histogram(bins=100)+coord_cartesian(xlim = c(0, 5))+labs(
+    x = "Garbage Time (score differential/time remaining)", 
+    y = "Count", 
+    title = "Histogram of Distribution of Garbage Time Metric")
+```
+
+Additionally, in \@ref(tab:fe_hist) above, it was an extremely right skewed distribution. There was a great deal of plays with a 0 or near 0 garbage time score, and a 'straggling tail' of extreme outliers with much larger garbage time values.
 
 Due to this, I considered further feature engineering, wherein I created a binary cutoff of garbage time, treating it as a categorical variable. This is because the extreme nonlinearity and outliers in the distribution of garbage time values made me hesitant to use linear modeling.
 
