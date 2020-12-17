@@ -1,3 +1,8 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
 
 ## **Question - Can we forecast which defensive personnel to use in certain circumstances?**
 
@@ -9,10 +14,9 @@ Therefore, given these five variables that a coach can see before a play begins,
 The first step was obviously to clean the data as well as filter it down to the five predictor variables plus the response variable. In this case, we are using EPA (Expected Points Added) as the response variable and the variables we are running the regression to predict.
 
 ```{r Joes Analysis, include=FALSE}
-library(randomForest)
-library(gbm)
 library(kableExtra)
 library(glmnet)
+library(ggplot2)
 
 
 plays.test = read.csv("Data/NFL_Test.csv")
@@ -143,12 +147,13 @@ Ridge.data$down = as.factor(Ridge.data$down)
 
 Ridge.data.test = plays.test %>%
   dplyr::select(absoluteYardlineNumber, yardsToGo, down, 
-                score.diff, offenseFormation, epa, personnelD)
+                score.diff, offenseFormation, epa, personnelD) %>%
+  dplyr::filter(offenseFormation != "JUMBO")
 Ridge.data.test$down = as.factor(Ridge.data.test$down)
 
 
 
-#Subset by defensive personell
+#Subset by defensive personnel
 Rsubset1 = subset(Ridge.data, Ridge.data$personnelD == "3 DL, 2 LB, 6 DB")
 Rsubset2 = subset(Ridge.data, Ridge.data$personnelD == "4 DL, 2 LB, 5 DB")
 Rsubset3 = subset(Ridge.data, Ridge.data$personnelD == "1 DL, 4 LB, 6 DB")
@@ -442,4 +447,57 @@ for (i in 1:nrow(Ridge.data.test)){
 }
 ```
 
-Now, using the Ridge model, the last thing that I wanted to do was to find the optimal defensive formation
+Now, using the Ridge model, the last thing that I wanted to do was to find the optimal defensive formation for each given play in the test set. This was done by finding the minimum EPA prediction out of all ten predictions and backtracking to what defensive personnel was used to make that prediction. This will in turn give us the optimal defensive personnel based on the minimum EPA
+
+
+With this in mind, there are many implementations for NFL coaches. Now, as we can see below, we have a range of yardages that each defensive personnel should be implemented.
+```{r endgraphs1, echo = F, include = T, fig.align="center"}
+
+boxplot.data = Ridge.data.test %>%
+  dplyr::filter(Ridge.data.test$OptFormation == "3 DL, 2 LB, 6 DB" |
+         Ridge.data.test$OptFormation == "1 DL, 5 LB, 5 DB" |
+         Ridge.data.test$OptFormation == "2 DL, 3 LB, 6 DB")
+
+boxplot(boxplot.data$absoluteYardlineNumber ~ boxplot.data$OptFormation, main = "Optimal Formations by Yardage Lines", xlab = "Personnel", ylab = "Yardline")
+```
+
+Here is a good implementation of the model at hand. We can see that the model predicts the best time to use each of these three personnels. Pretty interesting that most of the time that the model predicts 3 DL, 2 LB, and 6 DBs is down near the goal line. That is useful information for the coaching staffs. 
+
+Lastly, another implementation would be to see which defensive personnel unit on average is the best on each down, from first down to fourth downs. On fourth downs, we took out any punts, so we are only looking at plays where the other team was going for it. The table below shows which formations did the best on each of the four downs.
+
+```{r lasttable, echo = F, include = T}
+
+Down.Data1 = subset(Ridge.data.test, down == 1)
+Down.Data2 = subset(Ridge.data.test, down == 2)
+Down.Data3 = subset(Ridge.data.test, down == 3)
+Down.Data4 = subset(Ridge.data.test, down == 4)
+
+Down1 = names(which.max(table(Down.Data1$OptFormation)))
+Down2 = names(which.max(table(Down.Data2$OptFormation)))
+Down3 = names(which.max(table(Down.Data3$OptFormation)))
+Down4 = names(which.max(table(Down.Data4$OptFormation)))
+
+
+Down.Data = data.frame(
+  Down = c(1:4),
+  OptForm = c(Down1, Down2, Down3, Down4))
+
+kable(Down.Data, booktabs = T, caption = "Down Data")
+```
+
+
+
+This table allows us to see which defensive personnels to use during each down, which is a useful tool if you are a coach. 
+
+
+## Conclusion
+
+There are some obvious faults with this data analysis that, given a little more time, I would have loved to jump into. First, its obvious at the end of the analysis that I really should not have included defensive personnels that only include 1 DL. These plays tend to simply happen at the end of the games where much of the focus is put on defending the pass. 
+
+I do think this analysis was really cool though, at least in the implementation. Being able to have a model that willgive you your optimal formation on defensive given the circumstances pre-snap is a really cool and interesting application. But, there are instances in a football game where you cannot make substitutions, or the other team audibles causing everything to crash. 
+
+In the end I am happy with the work that I was able to complete and looking forward to next semester!
+
+
+
+```
