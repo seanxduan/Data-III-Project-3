@@ -92,6 +92,18 @@ library(stringr)
 
 We decided to choose the NFL Big Data Bowl as our Kaggle project because all three of our group members had a reasonable understanding and enjoyment of professional American football. Additionally, we were all very happy with the abundance of real-world data that required minimal finessing and cleaning to get it to an analysis ready position. Lastly, because of the variety and depth of the data available we believed that we would be able to find and answer many interesting questions.
 
+# Data cleaning/feature engineering
+
+NA values were found for defendersInTheBox, numberOfPassRushers, preSnapVisitorScore, preSnapHomeScore, and absoluteYardlineNumber. The NAs for defendersInTheBox were replaced with the average number of defenders in the box, and the NAs for numberOfPassRushers was also replaced with the mean for that variable. The NAs for absoluteYardlineNumber were replaced with the true absolute yardline number. These values were able to be recovered because the offense’s position on the field is recorded for each play.
+
+Plays with NAs for preSnapVisitorScore and preSnapHomeScore as well as empty strings for gameClock were removed, as these rows only accounted for approximately X% of the plays dataset. Blank strings for penaltyCodes were replaced with “None,” and punting plays were removed as well, as only passing plays are of interest in this analysis.
+
+For each play, the average age, weight, and height for all players on offense and defense were computed. However, it is important to note that this does not include players on the offensive and defensive line, as these positions are not included in the players dataset, which was used to engineer these variables. NAs for average weight and average height were replaced with the averages for those variables, calculated excluding the NAs.
+
+Additional variables that were engineered include the absolute value of the difference between preSnapHomeScore and preSnapVisitorScore, a variable called side that indicates whether the defense is on its own side of the field or not, and a variable called time_remaining with the total amount of time in minutes remaining in the game, accounting for overtime. A variable called close_game was also engineered to indicate whether or not the game is close, and dbs is the number of defensive backs on the field for each play.
+
+The data was split into an 80% training set and a 20% test set so that all models for all questions were fit on the same training set and evaluated using the same test set. Additional data engineering steps, which are for the most part only relevant to the specific question being answered, are detailed in the sections that follow.
+
 ```{r child = "david_primary.Rmd"}
 ```
 
