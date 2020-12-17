@@ -166,7 +166,10 @@ RsubsetFull = rbind(Rsubset1, Rsubset2, Rsubset3, Rsubset4, Rsubset5,
 
 #First
 ridge.test = model.matrix(epa ~ . -personnelD, data = Ridge.data.test)
-
+#fixing ridge.test
+ridge.test<-as.data.frame(ridge.test)
+ridge.test$offenseFormationJUMBO<-rep(0,3602)
+ridge.test<-as.matrix(ridge.test)
 
 #Testing using full data
 xFull = model.matrix(epa~ . - personnelD, data = RsubsetFull)
