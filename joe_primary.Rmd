@@ -1,25 +1,22 @@
-<<<<<<< Updated upstream
-## **Question - Does "Garbage Time" work as popular opinion concieves it to?**
 
-```{r joesetup, include = FALSE}
-=======
-## Question - Can we forecast which defensive personnel to use in certain circumstances?
+## **Question - Can we forecast which defensive personnel to use in certain circumstances?**
 
 
 The first question that came to mind was what would a coach want to know given the data that was provided? The best question that I could come up with what defensive personnel should I play, given certain circumstances that a coach would see before a play. In other words, a defensive coach can see what the down is, how many yards until a first down, the formation of the offense, the time left on the clock, and of course the score. 
 
 Therefore, given these five variables that a coach can see before a play begins, what defensive personnel should he implement? Personally, I thought that this questions would be a fun one to answer using Machine Learning and some of the techniques that we learned in DAIII.
 
-The first step was obviously to clean the data as well as filter it down to the five predictor variables plus the response variable. In this case, we are using EPA (Expected Points Added) as the response variable and the variables we are running the regression to predict. 
-```{r Joes Analysis, include = FALSE, echo = F}
+The first step was obviously to clean the data as well as filter it down to the five predictor variables plus the response variable. In this case, we are using EPA (Expected Points Added) as the response variable and the variables we are running the regression to predict.
+
+```{r Joes Analysis, include=FALSE}
 library(randomForest)
 library(gbm)
 library(kableExtra)
 library(glmnet)
 
 
-plays.test = read.csv("c:/Users/JoeCo/Documents/GitHub/Data-III-Project-3/Data/NFL_Test.csv")
-plays.train = read.csv("c:/Users/JoeCo/Documents/GitHub/Data-III-Project-3/Data/NFL_Train.csv")
+plays.test = read.csv("Data/NFL_Test.csv")
+plays.train = read.csv("Data/NFL_Train.csv")
 
 
 #Getting score differential for team with ball (not to be confused with score_diff)
@@ -103,27 +100,18 @@ AFP = data.frame(
 )
 kable(AFP, booktabs = T, caption = "Field Position Statistics")
 
->>>>>>> Stashed changes
-
 ```
 
 
 Looking at the data, I would once again say that we are good to go with the analysis as there are no distinct differences between each of the defensive personnels. 
 
-<<<<<<< Updated upstream
 ### **Method**
-
-### **Feature Engineering**
-
-```{r joe feat_engi,echo=FALSE}
-
-=======
-## Method
 The next step that I did was to subset the data down into each of the personnels. Meaning that all of the plays that were run by each of the 10 formations had its own subsets. I did this so that I could run a different model for each personnel.
 
 I first started using gradient boosting. Gradient tended to work very well in a lot of the analysis that I have done before, and so this is what I wanted to start with. I tuned the parameters of iteration.depth and n.trees for each subset to obtain the optimal model for each formation. Unfortunately, using this kind of model produced results that were worse than guessing zero for the EPA each time. 
 
 Therefore, the next step was to change directions and change models. I decided to go with Ridge and Lasso Regression. These models seemed a little simpler, and might help when we don't have as many variables. I tuned each model using the cv.glmnet function and got the best model for each subset once again. 
+
 ```{r analysis1, echo = F, include = F}
 
 #Filter play.test data to defensive formations that we know
@@ -183,8 +171,6 @@ ridge.test = model.matrix(epa ~ . -personnelD, data = Ridge.data.test)
 #Testing using full data
 xFull = model.matrix(epa~ . - personnelD, data = RsubsetFull)
 yFull = RsubsetFull$epa
->>>>>>> Stashed changes
-
 
 #Ridge
 cv.subsetFull.ridge = cv.glmnet(xFull, yFull, alpha = 0)
@@ -200,12 +186,10 @@ lasso.predFull = predict(cv.subsetFull.lasso, s = bestlam, newx = ridge.test)
 MSElasso = mean((Ridge.data.test$epa - lasso.predFull) ^ 2)
 ```
 
-<<<<<<< Updated upstream
 ### **Modeling**
 
-```{r joe modeling,echo=FALSE}
-=======
 So, now we have ten different models, each built from the subset of data from each of the top ten defensive personnel units. 
+
 ```{r analysis2, echo = F, include = F}
 #subset 1
 x1 = model.matrix(epa~ . - personnelD, data = Rsubset1)
@@ -288,8 +272,6 @@ ridge.pred5 = predict(cv.subset5.ridge, s = bestlam, newx = ridge.test)
 cv.subset5.lasso = cv.glmnet(x5, y5, alpha = 1)
 bestlam = cv.subset5.lasso$lambda.min
 lasso.pred5 = predict(cv.subset5.lasso, s = bestlam, newx = ridge.test)
-
->>>>>>> Stashed changes
 
 
 #Subset6
@@ -428,11 +410,7 @@ Ridge.MSEl = mean((Ridge.data.test$epa - Ridge.data.test$BestPredL) ^ 2)
 ```
 
 
-<<<<<<< Updated upstream
 ### **Results**
-
-```{r joeresults,echo=FALSE}
-=======
 
 ```{r analysis end, echo = F, include = F}
 ### Only using the Ridge model now
@@ -441,8 +419,6 @@ Ridge.MSEl = mean((Ridge.data.test$epa - Ridge.data.test$BestPredL) ^ 2)
 Ridge.data.test = Ridge.data.test %>%
   dplyr::select(absoluteYardlineNumber, yardsToGo, down, score.diff, offenseFormation, epa,
          pred1R, pred2R, pred3R, pred4R, pred5R, pred6R, pred7R, pred8R, pred9R, pred10R)
->>>>>>> Stashed changes
-
 
 which.min(Ridge.data.test[2, 7:16])
 
@@ -460,25 +436,4 @@ for (i in 1:nrow(Ridge.data.test)){
                                  ifelse(which.min(Ridge.data.test[i, 7:16]) == 10, "3 DL, 4 LB, 4 DB", NA))))))))))
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
