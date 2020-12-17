@@ -236,6 +236,10 @@ plays$penalty <- as.factor(plays$penalty)
 plays$dbs <- as.numeric(plays$dbs)
 plays$epa_bi <- as.factor(plays$epa_bi)
 
+
+
+
+
 # Select and rename relevant columns
 cor(plays$defendersInTheBox, plays$numberOfPassRushers)
 cor(plays$offensePlayResult, plays$playResult)
