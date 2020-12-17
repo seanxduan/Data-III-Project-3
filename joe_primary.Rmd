@@ -1,38 +1,484 @@
+<<<<<<< Updated upstream
 ## **Question - Does "Garbage Time" work as popular opinion concieves it to?**
 
 ```{r joesetup, include = FALSE}
+=======
+## Question - Can we forecast which defensive personnel to use in certain circumstances?
+
+
+The first question that came to mind was what would a coach want to know given the data that was provided? The best question that I could come up with what defensive personnel should I play, given certain circumstances that a coach would see before a play. In other words, a defensive coach can see what the down is, how many yards until a first down, the formation of the offense, the time left on the clock, and of course the score. 
+
+Therefore, given these five variables that a coach can see before a play begins, what defensive personnel should he implement? Personally, I thought that this questions would be a fun one to answer using Machine Learning and some of the techniques that we learned in DAIII.
+
+The first step was obviously to clean the data as well as filter it down to the five predictor variables plus the response variable. In this case, we are using EPA (Expected Points Added) as the response variable and the variables we are running the regression to predict. 
+```{r Joes Analysis, include = FALSE, echo = F}
+library(randomForest)
+library(gbm)
+library(kableExtra)
+library(glmnet)
+
+
+plays.test = read.csv("c:/Users/JoeCo/Documents/GitHub/Data-III-Project-3/Data/NFL_Test.csv")
+plays.train = read.csv("c:/Users/JoeCo/Documents/GitHub/Data-III-Project-3/Data/NFL_Train.csv")
+
+
+#Getting score differential for team with ball (not to be confused with score_diff)
+
+
+plays.train$score.diff = ifelse(plays.train$possessionTeam == plays.train$HomeTeam, plays.train$preSnapHomeScore - plays.train$preSnapVisitorScore, 
+                                                                        plays.train$preSnapVisitorScore - plays.train$preSnapHomeScore)
+plays.test$score.diff = ifelse(plays.test$possessionTeam == plays.test$HomeTeam, plays.test$preSnapHomeScore - plays.test$preSnapVisitorScore, 
+                                plays.test$preSnapVisitorScore - plays.test$preSnapHomeScore)
+
+
+#what are the most common Defensive Personells
+
+NFL.train = plays.train %>%
+  dplyr::select(gameId, playId, offenseFormation, personnelO, absoluteYardlineNumber,
+         yardsToGo, down, score.diff, time_remaining, personnelD, epa, personnelD)
+
+#Subset by defensive personell
+subset1 = subset(NFL.train, NFL.train$personnelD == "3 DL, 2 LB, 6 DB")
+subset2 = subset(NFL.train, NFL.train$personnelD == "4 DL, 2 LB, 5 DB")
+subset3 = subset(NFL.train, NFL.train$personnelD == "1 DL, 4 LB, 6 DB")
+subset4 = subset(NFL.train, NFL.train$personnelD == "2 DL, 4 LB, 5 DB")
+subset5 = subset(NFL.train, NFL.train$personnelD == "1 DL, 5 LB, 5 DB")
+subset6 = subset(NFL.train, NFL.train$personnelD == "2 DL, 3 LB, 6 DB")
+subset7 = subset(NFL.train, NFL.train$personnelD == "3 DL, 3 LB, 5 DB")
+subset8 = subset(NFL.train, NFL.train$personnelD == "4 DL, 1 LB, 6 DB")
+subset9 = subset(NFL.train, NFL.train$personnelD == "4 DL, 3 LB, 4 DB")
+subset10 = subset(NFL.train, NFL.train$personnelD == "3 DL, 4 LB, 4 DB")
 
 ```
 
-- Brief description of the motivation for the study and the expected outcome.
-- perhaps touch on the predicted differences between the two approaches
 
+## Exploratory Set-Up
+The one aspect of this analysis that was worry-some was an expected correlation between the EPA and where the team is physically on the field (what yardage line). This worry was relaxed as we look at the graph below showing the EPA vs. Yardage Line Correlation Scatter-plot.
+
+```{r exploratory 1, echo = F, include = T, fig.align="center"}
+#Only worry is the distance on the fields where these formations are dependent on each other
+#Below shows there shouldn't be a worry
+#Only worry is with play result and epa
+
+par(mfrow = c(1,1))
+Yard.Epa.Cor = cor(NFL.train$absoluteYardlineNumber, NFL.train$epa)
+fit = lm(epa ~ absoluteYardlineNumber, data = NFL.train)
+plot(NFL.train$absoluteYardlineNumber, NFL.train$epa, main = "Yardline vs. EPA", xlab = "Yardline", ylab = "EPA")
+abline(a = fit$coefficients[1], b = fit$coefficients[2], col = "red", main = "Yard Line vs EPA")
+```
+With a a correlation of `r Yard.Epa.Cor`, or basically zero, there is no correlation between these two variables. Doing a little deeper digging, you will find that the Result of the play (or the yardage gained during the play) is the only variable that has a major correlation with EPA.
+
+In order to do this analysis, I subsetted defensive personnel down into the top 10 defensive formations. This included any personnel that had 100 or more snaps throughout the 2019 season. 
+
+One more worry that I came across was the idea that teams might implement these formations on specific parts of the field (in certain situations) more often than others. So, I looked into the average and standard deviation of field positions for each of the ten defensive personnel units. The table below shows these numbers.
+
+
+
+```{r exploratory 2, echo = F, include = T, fig.align="center"}
+AFP1 = mean(subset1$absoluteYardlineNumber)
+SD1 = sd(subset1$absoluteYardlineNumber)
+AFP2 = mean(subset2$absoluteYardlineNumber)
+SD2 = sd(subset2$absoluteYardlineNumber)
+AFP3 = mean(subset3$absoluteYardlineNumber)
+SD3 = sd(subset3$absoluteYardlineNumber)
+AFP4 = mean(subset4$absoluteYardlineNumber)
+SD4 = sd(subset4$absoluteYardlineNumber)
+AFP5 = mean(subset5$absoluteYardlineNumber)
+SD5 = sd(subset5$absoluteYardlineNumber)
+AFP6 = mean(subset6$absoluteYardlineNumber)
+SD6 = sd(subset6$absoluteYardlineNumber)
+AFP7 = mean(subset7$absoluteYardlineNumber)
+SD7 = sd(subset7$absoluteYardlineNumber)
+AFP8 = mean(subset8$absoluteYardlineNumber)
+SD8 = sd(subset8$absoluteYardlineNumber)
+AFP9 = mean(subset9$absoluteYardlineNumber)
+SD9 = sd(subset9$absoluteYardlineNumber)
+AFP10 = mean(subset10$absoluteYardlineNumber)
+SD10 = sd(subset10$absoluteYardlineNumber)
+
+AFP = data.frame(
+  DefenseForm = 1:10,
+  AvgFieldPos = c(AFP1, AFP2, AFP3, AFP4, AFP5, AFP6, AFP7, AFP8, AFP9, AFP10),
+  SdFieldPos = c(SD1, SD2, SD3, SD4, SD5, SD6, SD7, SD8, SD9, SD10)
+)
+kable(AFP, booktabs = T, caption = "Field Position Statistics")
+
+>>>>>>> Stashed changes
+
+```
+
+
+Looking at the data, I would once again say that we are good to go with the analysis as there are no distinct differences between each of the defensive personnels. 
+
+<<<<<<< Updated upstream
 ### **Method**
 
 ### **Feature Engineering**
 
 ```{r joe feat_engi,echo=FALSE}
 
+=======
+## Method
+The next step that I did was to subset the data down into each of the personnels. Meaning that all of the plays that were run by each of the 10 formations had its own subsets. I did this so that I could run a different model for each personnel.
+
+I first started using gradient boosting. Gradient tended to work very well in a lot of the analysis that I have done before, and so this is what I wanted to start with. I tuned the parameters of iteration.depth and n.trees for each subset to obtain the optimal model for each formation. Unfortunately, using this kind of model produced results that were worse than guessing zero for the EPA each time. 
+
+Therefore, the next step was to change directions and change models. I decided to go with Ridge and Lasso Regression. These models seemed a little simpler, and might help when we don't have as many variables. I tuned each model using the cv.glmnet function and got the best model for each subset once again. 
+```{r analysis1, echo = F, include = F}
+
+#Filter play.test data to defensive formations that we know
+plays.test = plays.test %>%
+  dplyr::filter(personnelD == "3 DL, 2 LB, 6 DB" | 
+           personnelD == "4 DL, 2 LB, 5 DB" | 
+           personnelD == "1 DL, 4 LB, 6 DB" | 
+           personnelD == "2 DL, 4 LB, 5 DB" | 
+           personnelD == "1 DL, 5 LB, 5 DB" | 
+           personnelD == "2 DL, 3 LB, 6 DB" | 
+           personnelD == "3 DL, 3 LB, 5 DB" | 
+           personnelD == "4 DL, 1 LB, 6 DB" | 
+           personnelD == "4 DL, 3 LB, 4 DB" | 
+           personnelD == "3 DL, 4 LB, 4 DB")
+
+#Ridge Regression and Lasso Regression
 
 
+#Find best fit for each subset...
+###Subset1
+library(glmnet)
+grid = 10^seq(10, -2, length = 100)
+
+Ridge.data = plays.train %>%
+  dplyr::select(absoluteYardlineNumber, yardsToGo, down, 
+         score.diff, offenseFormation, epa, personnelD)
+Ridge.data$down = as.factor(Ridge.data$down)
+
+
+Ridge.data.test = plays.test %>%
+  dplyr::select(absoluteYardlineNumber, yardsToGo, down, 
+                score.diff, offenseFormation, epa, personnelD)
+Ridge.data.test$down = as.factor(Ridge.data.test$down)
+
+
+
+#Subset by defensive personell
+Rsubset1 = subset(Ridge.data, Ridge.data$personnelD == "3 DL, 2 LB, 6 DB")
+Rsubset2 = subset(Ridge.data, Ridge.data$personnelD == "4 DL, 2 LB, 5 DB")
+Rsubset3 = subset(Ridge.data, Ridge.data$personnelD == "1 DL, 4 LB, 6 DB")
+Rsubset4 = subset(Ridge.data, Ridge.data$personnelD == "2 DL, 4 LB, 5 DB")
+Rsubset5 = subset(Ridge.data, Ridge.data$personnelD == "1 DL, 5 LB, 5 DB")
+Rsubset6 = subset(Ridge.data, Ridge.data$personnelD == "2 DL, 3 LB, 6 DB")
+Rsubset7 = subset(Ridge.data, Ridge.data$personnelD == "3 DL, 3 LB, 5 DB")
+Rsubset8 = subset(Ridge.data, Ridge.data$personnelD == "4 DL, 1 LB, 6 DB")
+Rsubset9 = subset(Ridge.data, Ridge.data$personnelD == "4 DL, 3 LB, 4 DB")
+Rsubset10 = subset(Ridge.data, Ridge.data$personnelD == "3 DL, 4 LB, 4 DB")
+
+RsubsetFull = rbind(Rsubset1, Rsubset2, Rsubset3, Rsubset4, Rsubset5,
+                    Rsubset6, Rsubset7, Rsubset8, Rsubset9, Rsubset10)
+
+
+#First
+ridge.test = model.matrix(epa ~ . -personnelD, data = Ridge.data.test)
+
+
+#Testing using full data
+xFull = model.matrix(epa~ . - personnelD, data = RsubsetFull)
+yFull = RsubsetFull$epa
+>>>>>>> Stashed changes
+
+
+#Ridge
+cv.subsetFull.ridge = cv.glmnet(xFull, yFull, alpha = 0)
+bestlam = cv.subsetFull.ridge$lambda.min
+ridge.predFull = predict(cv.subsetFull.ridge, s = bestlam, newx = ridge.test)
+MSEridge = mean((Ridge.data.test$epa - ridge.predFull) ^ 2)
+
+
+#Lasso
+cv.subsetFull.lasso = cv.glmnet(xFull, yFull, alpha = 1)
+bestlam = cv.subsetFull.lasso$lambda.min
+lasso.predFull = predict(cv.subsetFull.lasso, s = bestlam, newx = ridge.test)
+MSElasso = mean((Ridge.data.test$epa - lasso.predFull) ^ 2)
 ```
 
+<<<<<<< Updated upstream
 ### **Modeling**
 
 ```{r joe modeling,echo=FALSE}
+=======
+So, now we have ten different models, each built from the subset of data from each of the top ten defensive personnel units. 
+```{r analysis2, echo = F, include = F}
+#subset 1
+x1 = model.matrix(epa~ . - personnelD, data = Rsubset1)
+y1 = Rsubset1$epa
+
+#Ridge
+cv.subset1.ridge = cv.glmnet(x1, y1, alpha = 0)
+bestlam = cv.subset1.ridge$lambda.min
+ridge.pred1 = predict(cv.subset1.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset1.lasso = cv.glmnet(x1, y1, alpha = 1)
+bestlam = cv.subset1.lasso$lambda.min
+lasso.pred1 = predict(cv.subset1.lasso, s = bestlam, newx = ridge.test)
 
 
 
+
+
+
+#Subset2
+x2 = model.matrix(epa~ . - personnelD, data = Rsubset2)
+y2 = Rsubset2$epa
+
+#Ridge
+cv.subset2.ridge = cv.glmnet(x2, y2, alpha = 0)
+bestlam = cv.subset2.ridge$lambda.min
+ridge.pred2 = predict(cv.subset2.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset2.lasso = cv.glmnet(x2, y2, alpha = 1)
+bestlam = cv.subset2.lasso$lambda.min
+lasso.pred2 = predict(cv.subset2.lasso, s = bestlam, newx = ridge.test)
+
+
+
+#Subset 3
+#Subset2
+x3 = model.matrix(epa~ . - personnelD, data = Rsubset3)
+y3 = Rsubset3$epa
+
+#Ridge
+cv.subset3.ridge = cv.glmnet(x3, y3, alpha = 0)
+bestlam = cv.subset3.ridge$lambda.min
+ridge.pred3 = predict(cv.subset3.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset3.lasso = cv.glmnet(x3, y3, alpha = 1)
+bestlam = cv.subset3.lasso$lambda.min
+lasso.pred3 = predict(cv.subset3.lasso, s = bestlam, newx = ridge.test)
+
+
+
+#Subset4
+x4 = model.matrix(epa~ . - personnelD, data = Rsubset4)
+y4 = Rsubset4$epa
+
+#Ridge
+cv.subset4.ridge = cv.glmnet(x4, y4, alpha = 0)
+bestlam = cv.subset4.ridge$lambda.min
+ridge.pred4 = predict(cv.subset4.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset4.lasso = cv.glmnet(x4, y4, alpha = 1)
+bestlam = cv.subset4.lasso$lambda.min
+lasso.pred4 = predict(cv.subset4.lasso, s = bestlam, newx = ridge.test)
+
+
+
+#Subset5
+x5 = model.matrix(epa~ . - personnelD, data = Rsubset5)
+y5 = Rsubset5$epa
+
+#Ridge
+cv.subset5.ridge = cv.glmnet(x5, y5, alpha = 0)
+bestlam = cv.subset5.ridge$lambda.min
+ridge.pred5 = predict(cv.subset5.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset5.lasso = cv.glmnet(x5, y5, alpha = 1)
+bestlam = cv.subset5.lasso$lambda.min
+lasso.pred5 = predict(cv.subset5.lasso, s = bestlam, newx = ridge.test)
+
+>>>>>>> Stashed changes
+
+
+#Subset6
+x6 = model.matrix(epa~ . - personnelD, data = Rsubset6)
+y6 = Rsubset6$epa
+
+#Ridge
+cv.subset6.ridge = cv.glmnet(x6, y6, alpha = 0)
+bestlam = cv.subset6.ridge$lambda.min
+ridge.pred6 = predict(cv.subset6.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset6.lasso = cv.glmnet(x6, y6, alpha = 1)
+bestlam = cv.subset6.lasso$lambda.min
+lasso.pred6 = predict(cv.subset6.lasso, s = bestlam, newx = ridge.test)
+
+
+
+
+#Subset 7
+x7 = model.matrix(epa~ . - personnelD, data = Rsubset7)
+y7 = Rsubset7$epa
+
+#Ridge
+cv.subset7.ridge = cv.glmnet(x7, y7, alpha = 0)
+bestlam = cv.subset7.ridge$lambda.min
+ridge.pred7 = predict(cv.subset7.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset7.lasso = cv.glmnet(x7, y7, alpha = 1)
+bestlam = cv.subset7.lasso$lambda.min
+lasso.pred7 = predict(cv.subset7.lasso, s = bestlam, newx = ridge.test)
+
+
+
+#Subset 8
+x8 = model.matrix(epa~ . - personnelD, data = Rsubset8)
+y8 = Rsubset8$epa
+
+#Ridge
+cv.subset8.ridge = cv.glmnet(x8, y8, alpha = 0)
+bestlam = cv.subset8.ridge$lambda.min
+ridge.pred8 = predict(cv.subset8.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset8.lasso = cv.glmnet(x8, y8, alpha = 1)
+bestlam = cv.subset8.lasso$lambda.min
+lasso.pred8 = predict(cv.subset8.lasso, s = bestlam, newx = ridge.test)
+
+
+
+#Subset 9 
+x9 = model.matrix(epa~ . - personnelD, data = Rsubset9)
+y9 = Rsubset9$epa
+
+#Ridge
+cv.subset9.ridge = cv.glmnet(x9, y9, alpha = 0)
+bestlam = cv.subset9.ridge$lambda.min
+ridge.pred9 = predict(cv.subset9.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset9.lasso = cv.glmnet(x9, y9, alpha = 1)
+bestlam = cv.subset9.lasso$lambda.min
+lasso.pred9 = predict(cv.subset9.lasso, s = bestlam, newx = ridge.test)
+
+
+
+#Subset10
+x10 = model.matrix(epa~ . - personnelD, data = Rsubset10)
+y10 = Rsubset10$epa
+
+#Ridge
+cv.subset10.ridge = cv.glmnet(x10, y10, alpha = 0)
+bestlam = cv.subset10.ridge$lambda.min
+ridge.pred10 = predict(cv.subset10.ridge, s = bestlam, newx = ridge.test)
+
+#Lasso
+cv.subset10.lasso = cv.glmnet(x10, y10, alpha = 1)
+bestlam = cv.subset10.lasso$lambda.min
+lasso.pred10 = predict(cv.subset10.lasso, s = bestlam, newx = ridge.test)
+
+
+
+
+
+#Add predictions to play dataset
+Ridge.data.test$pred1R = ridge.pred1
+Ridge.data.test$pred1L = lasso.pred1
+Ridge.data.test$pred2R = ridge.pred2
+Ridge.data.test$pred2L = lasso.pred2
+Ridge.data.test$pred3R = ridge.pred3
+Ridge.data.test$pred3L = lasso.pred3
+Ridge.data.test$pred4R = ridge.pred4
+Ridge.data.test$pred4L = lasso.pred4
+Ridge.data.test$pred5R = ridge.pred5
+Ridge.data.test$pred5L = lasso.pred5
+Ridge.data.test$pred6R = ridge.pred6
+Ridge.data.test$pred6L = lasso.pred6
+Ridge.data.test$pred7R = ridge.pred7
+Ridge.data.test$pred7L = lasso.pred7
+Ridge.data.test$pred8R = ridge.pred8
+Ridge.data.test$pred8L = lasso.pred8
+Ridge.data.test$pred9R = ridge.pred9
+Ridge.data.test$pred9L = lasso.pred9
+Ridge.data.test$pred10R = ridge.pred10
+Ridge.data.test$pred10L = lasso.pred10
+
+
+
+#Now get MSE using subset predictions
+Ridge.data.test$BestPredR = ifelse(plays.test$personnelD == "3 DL, 2 LB, 6 DB", Ridge.data.test$pred1R,
+                             ifelse(plays.test$personnelD == "4 DL, 2 LB, 5 DB", Ridge.data.test$pred2R,
+                                    ifelse(plays.test$personnelD == "1 DL, 4 LB, 6 DB", Ridge.data.test$pred3R,
+                                           ifelse(plays.test$personnelD == "2 DL, 4 LB, 5 DB", Ridge.data.test$pred4R, 
+                                                  ifelse(plays.test$personnelD == "1 DL, 5 LB, 5 DB", Ridge.data.test$pred5R,
+                                                         ifelse(plays.test$personnelD == "2 DL, 3 LB, 6 DB", Ridge.data.test$pred6R,
+                                                                ifelse(plays.test$personnelD == "3 DL, 3 LB, 5 DB", Ridge.data.test$pred7R,
+                                                                       ifelse(plays.test$personnelD == "4 DL, 1 LB, 6 DB", Ridge.data.test$pred8R,
+                                                                              ifelse(plays.test$personnelD == "4 DL, 3 LB, 4 DB", Ridge.data.test$pred9R,
+                                                                                     ifelse(plays.test$personnelD == "3 DL, 4 LB, 4 DB", Ridge.data.test$pred10R, NA))))))))))
+Ridge.MSEr = mean((Ridge.data.test$epa - Ridge.data.test$BestPredR) ^ 2)
+
+
+
+Ridge.data.test$BestPredL = ifelse(plays.test$personnelD == "3 DL, 2 LB, 6 DB", Ridge.data.test$pred1L,
+                                  ifelse(plays.test$personnelD == "4 DL, 2 LB, 5 DB", Ridge.data.test$pred2L,
+                                         ifelse(plays.test$personnelD == "1 DL, 4 LB, 6 DB", Ridge.data.test$pred3L,
+                                                ifelse(plays.test$personnelD == "2 DL, 4 LB, 5 DB", Ridge.data.test$pred4L, 
+                                                       ifelse(plays.test$personnelD == "1 DL, 5 LB, 5 DB", Ridge.data.test$pred5L,
+                                                              ifelse(plays.test$personnelD == "2 DL, 3 LB, 6 DB", Ridge.data.test$pred6L,
+                                                                     ifelse(plays.test$personnelD == "3 DL, 3 LB, 5 DB", Ridge.data.test$pred7L,
+                                                                            ifelse(plays.test$personnelD == "4 DL, 1 LB, 6 DB", Ridge.data.test$pred8L,
+                                                                                   ifelse(plays.test$personnelD == "4 DL, 3 LB, 4 DB", Ridge.data.test$pred9L,
+                                                                                          ifelse(plays.test$personnelD == "3 DL, 4 LB, 4 DB", Ridge.data.test$pred10L, NA))))))))))
+Ridge.MSEl = mean((Ridge.data.test$epa - Ridge.data.test$BestPredL) ^ 2)
 ```
 
-Text here
 
+<<<<<<< Updated upstream
 ### **Results**
 
 ```{r joeresults,echo=FALSE}
+=======
+
+```{r analysis end, echo = F, include = F}
+### Only using the Ridge model now
+### Gonna pick the defensive formation they should have 
+
+Ridge.data.test = Ridge.data.test %>%
+  dplyr::select(absoluteYardlineNumber, yardsToGo, down, score.diff, offenseFormation, epa,
+         pred1R, pred2R, pred3R, pred4R, pred5R, pred6R, pred7R, pred8R, pred9R, pred10R)
+>>>>>>> Stashed changes
 
 
+which.min(Ridge.data.test[2, 7:16])
 
+Ridge.data.test$OptFormation = NA
+for (i in 1:nrow(Ridge.data.test)){
+  Ridge.data.test[i, 17] = ifelse(which.min(Ridge.data.test[i, 7:16]) == 1, "3 DL, 2 LB, 6 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 2, "4 DL, 2 LB, 5 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 3, "1 DL, 4 LB, 6 DB", 
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 4, "2 DL, 4 LB, 5 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 5, "1 DL, 5 LB, 5 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 6, "2 DL, 3 LB, 6 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 7, "3 DL, 3 LB, 5 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 8, "4 DL, 1 LB, 6 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 9, "4 DL, 3 LB, 4 DB",
+                                 ifelse(which.min(Ridge.data.test[i, 7:16]) == 10, "3 DL, 4 LB, 4 DB", NA))))))))))
+}
 ```
 
-Text here
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

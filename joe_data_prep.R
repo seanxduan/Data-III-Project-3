@@ -82,8 +82,15 @@ players$Side = ifelse(is.element(players$position, Offense) == T, "Off", "Def")
 FullData$Side = players[match(FullData$nflId, players$nflId), 11]
 
 
+#Add Home or Away team names
+FullData$HomeTeam = games[match(FullData$gameId, games$gameId), 4]
+FullData$AwayTeam = games[match(FullData$gameId, games$gameId), 5]
+plays$HomeTeam = games[match(plays$gameId, games$gameId), 4]
+plays$AwayTeam = games[match(plays$gameId, games$gameId), 5]
+
+
 #Get averages on both sides of the ball
-#One thing is that they don't have any offensive or defesive lineman listed on all of these plays
+#One thing is that they don't have any offensive or defensive lineman listed on all of these plays
 AveragesOff = data.frame(FullData %>%
   filter(Side == "Off") %>%
   group_by(GamePlay) %>%
@@ -92,7 +99,7 @@ AveragesOff = data.frame(FullData %>%
     AvgHeightOff = mean(Height), 
     AvgAgeOff = mean(Age)
   ))
-head(Averages)
+
 
 AveragesDef = data.frame(FullData %>%
   filter(Side == "Def") %>%
@@ -102,7 +109,7 @@ AveragesDef = data.frame(FullData %>%
     AvgHeightDef = mean(Height),
     AvgAgeDef = mean(Age)
   ))
-head(AveragesDef)
+
 
 
 
@@ -244,13 +251,13 @@ plays$epa_bi <- as.factor(plays$epa_bi)
 cor(plays$defendersInTheBox, plays$numberOfPassRushers)
 cor(plays$offensePlayResult, plays$playResult)
 dat <- plays %>% 
-  select(quarter, down, "yards_to_go" = yardsToGo, "play_type" = playType, 
+  dplyr::select(quarter, down, "yards_to_go" = yardsToGo, "play_type" = playType, 
          "offensive_formation" = offenseFormation, "offensive_personnel" = personnelO, 
          "defenders_in_box" = defendersInTheBox, "pass_rushers" = numberOfPassRushers, 
          "defensive_personnel" = personnelD, "dropback_type" = typeDropback, 
          "absolute_yardline" = absoluteYardlineNumber,  "play_result" = offensePlayResult, 
          score_diff, side, time_remaining, close_game, penalty, dbs, epa_bi, "pass_result" = passResult,
-         AvgWeightOff, AvgWeightDef, AvgHeightOff, AvgHeightDef, AvgAgeOff, AvgAgeDef)
+         AvgWeightOff, AvgWeightDef, AvgHeightOff, AvgHeightDef, AvgAgeOff, AvgAgeDef, HomeTeam, AwayTeam)
 
 
 apply(dat, 2, function(x) any(is.na(x)))
